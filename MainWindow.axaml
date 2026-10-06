@@ -1,0 +1,249 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="CapAvalonia.MainWindow"
+        Title="Cap"
+        Width="330"
+        Height="395"
+        MinWidth="330"
+        MinHeight="395"
+        MaxWidth="330"
+        MaxHeight="395"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="None"
+        CanResize="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        RequestedThemeVariant="Dark">
+
+  <Window.Styles>
+    <Style Selector="Button.toolbar">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="#969696" />
+      <Setter Property="CornerRadius" Value="7" />
+    </Style>
+    <Style Selector="Button.toolbar:pointerover">
+      <Setter Property="Background" Value="#292929" />
+      <Setter Property="Foreground" Value="#F1F1F1" />
+    </Style>
+    <Style Selector="Button.capture">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="#292929" />
+      <Setter Property="BorderBrush" Value="#3B3B3B" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="#F0F0F0" />
+      <Setter Property="CornerRadius" Value="9" />
+    </Style>
+    <Style Selector="Button.capture:pointerover">
+      <Setter Property="Background" Value="#303030" />
+      <Setter Property="BorderBrush" Value="#4A4A4A" />
+    </Style>
+    <Style Selector="Button.mode-icon">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="#A9A9A9" />
+      <Setter Property="CornerRadius" Value="18" />
+    </Style>
+    <Style Selector="Button.mode-icon:pointerover">
+      <Setter Property="Background" Value="#303030" />
+      <Setter Property="Foreground" Value="#F3F3F3" />
+    </Style>
+    <Style Selector="Button.mode-icon.selected">
+      <Setter Property="Background" Value="#282828" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="Button.audio-status">
+      <Setter Property="Width" Value="41" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="#343434" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="#A8A8A8" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="CornerRadius" Value="14" />
+    </Style>
+  </Window.Styles>
+
+  <Border Background="#111111"
+          BorderBrush="#303030"
+          BorderThickness="1"
+          CornerRadius="15"
+          ClipToBounds="True">
+    <Grid RowDefinitions="36,*">
+      <!-- Cap's compact in-window toolbar -->
+      <Border Grid.Row="0" Background="#1B1B1B" />
+      <Grid Grid.Row="0" Margin="9,4,5,4" ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button x:Name="RecordButton" Classes="toolbar" Click="OnCaptureButtonClick" ToolTip.Tip="Start recording">
+            <Ellipse x:Name="RecordGlyph" Width="14" Height="14" Fill="#F0F0F0" />
+          </Button>
+          <Button Classes="toolbar" Click="OnOpenHelp" ToolTip.Tip="Open Cap help">
+            <Viewbox Width="16" Height="16"><Path Data="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Zm0-6v.01M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4" Fill="Transparent" Stroke="#969696" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+          </Button>
+        </StackPanel>
+        <Border Grid.Column="1" Background="Transparent" PointerPressed="OnDragRegionPointerPressed" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button Classes="toolbar" Click="OnOpenSettings" ToolTip.Tip="Settings">
+            <Viewbox Width="16" Height="16"><Path Data="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-6 1.2 2.1 2.4.5 2-.9 2 2-1 2 .6 2.3L22 11v2l-2.2 1-.6 2.3 1 2-2 2-2-1-2.3.6L13 22h-2l-1-2.1-2.3-.6-2 1-2-2 1-2-.6-2.3L2 13v-2l2.1-1 .6-2.3-1-2 2-2 2 1L10 4l1-2Z" Fill="Transparent" Stroke="#969696" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+          </Button>
+          <Button Classes="toolbar" Click="OnOpenScreenshots" ToolTip.Tip="Screenshots">
+            <Viewbox Width="16" Height="16"><Path Data="M4 4h16v16H4zM4 15l4-4 4 4 3-3 5 5m-6-9h.01" Fill="Transparent" Stroke="#969696" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+          </Button>
+          <Button Classes="toolbar" Click="OnOpenRecordings" ToolTip.Tip="Recordings">
+            <Viewbox Width="16" Height="16"><Path Data="M5 3h14v18H5zM5 7h14M10 11v6l5-3Z" Fill="Transparent" Stroke="#969696" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+          </Button>
+          <Button Classes="toolbar" Click="OnOpenTeleprompter" ToolTip.Tip="Teleprompter">
+            <Viewbox Width="16" Height="16"><Path Data="M4 7V5a2 2 0 0 1 2-2h2m10 0h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M8 21H6a2 2 0 0 1-2-2v-2m4-8h8m-8 4h6" Fill="Transparent" Stroke="#969696" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+          </Button>
+          <Button Classes="toolbar" Click="OnOpenNotifications" ToolTip.Tip="Activity">
+            <Grid Width="18" Height="19">
+              <Viewbox Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" Fill="Transparent" Stroke="#969696" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+              <Ellipse x:Name="ActivityDot" Width="6" Height="6" Fill="#F04444" HorizontalAlignment="Right" VerticalAlignment="Top" IsVisible="False" />
+            </Grid>
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <Grid Grid.Row="1"
+            Margin="13,15,13,14"
+            RowDefinitions="36,19,57,8,57,8,42,8,42,8,42">
+        <!-- Brand, workspace, and three recording modes -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,114">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Border Width="36" Height="36" Background="#FFFFFF" CornerRadius="8" HorizontalAlignment="Left" VerticalAlignment="Center">
+              <Border Width="27" Height="27" Background="#171821" CornerRadius="14" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border Width="18" Height="18" Background="#BFC2CF" CornerRadius="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <Ellipse Width="10" Height="10" Fill="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+              </Border>
+            </Border>
+            <TextBlock Text="Cap" FontSize="26" FontWeight="SemiBold" Foreground="#F5F5F5" VerticalAlignment="Center" />
+            <Border Margin="2,0,0,0" Padding="9,3" Background="#292929" BorderBrush="#3B3B3B" BorderThickness="1" CornerRadius="12" VerticalAlignment="Center">
+              <TextBlock Text="Personal" FontSize="11" Foreground="#E7E7E7" />
+            </Border>
+          </StackPanel>
+
+          <Border Grid.Column="1"
+                  Width="114"
+                  Height="40"
+                  Background="#1B1B1B"
+                  BorderBrush="#303030"
+                  BorderThickness="1"
+                  CornerRadius="22"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Button x:Name="InstantModeButton" Classes="mode-icon" Tag="Instant" Click="OnModeClick" ToolTip.Tip="Instant mode">
+                <Border x:Name="InstantModeFrame" Width="32" Height="32" CornerRadius="17" BorderThickness="0" BorderBrush="Transparent">
+                  <PathIcon Width="17" Height="17" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M13 2 4.5 13h5L8 22l8.5-11h-5Z" />
+                </Border>
+              </Button>
+              <Button x:Name="StudioModeButton" Classes="mode-icon selected" Tag="Studio" Click="OnModeClick" ToolTip.Tip="Studio mode">
+                <Border x:Name="StudioModeFrame" Width="32" Height="32" CornerRadius="17" BorderThickness="2" BorderBrush="#3885FF" Background="#292929">
+                  <Viewbox Width="17" Height="17" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v10a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Zm0 2h16M10 2l-2 3m8-3-2 3m-3 5 4 2.5-4 2.5Z" Fill="Transparent" Stroke="#F1F1F1" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+                </Border>
+              </Button>
+              <Button x:Name="ScreenshotModeButton" Classes="mode-icon" Tag="Screenshot" Click="OnModeClick" ToolTip.Tip="Screenshot mode">
+                <Border x:Name="ScreenshotModeFrame" Width="32" Height="32" CornerRadius="17" BorderThickness="0" BorderBrush="Transparent">
+                  <Viewbox Width="17" Height="17" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="M4 4h16v16H4zM4 15l4-4 4 4 3-3 5 5m-6-9h.01" Fill="Transparent" Stroke="#A9A9A9" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+                </Border>
+              </Button>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- Capture targets -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+          <Button Classes="capture" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="OnDisplayTargetClick" ToolTip.Tip="Choose a display">
+            <Grid ColumnDefinitions="*,28">
+              <StackPanel Grid.Column="0" Spacing="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Viewbox Width="18" Height="18"><Path Data="M3 4h18v13H3zM8 21h8m-4-4v4" Fill="Transparent" Stroke="#898989" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+                <TextBlock Text="Display" FontSize="12" Foreground="#F0F0F0" />
+              </StackPanel>
+              <Border Grid.Column="1" Background="#252525" BorderBrush="#3A3A3A" BorderThickness="1,0,0,0" CornerRadius="0,9,9,0">
+                <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="m6 9 6 6 6-6" Fill="Transparent" Stroke="#929292" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+              </Border>
+            </Grid>
+          </Button>
+          <Button Classes="capture" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="OnWindowTargetClick" ToolTip.Tip="Select a window's screen area">
+            <Grid ColumnDefinitions="*,28">
+              <StackPanel Grid.Column="0" Spacing="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Viewbox Width="18" Height="18"><Path Data="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5Zm0 4h16M7 6.5h.01M10 6.5h.01M13 6.5h.01" Fill="Transparent" Stroke="#898989" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+                <TextBlock Text="Window" FontSize="12" Foreground="#F0F0F0" />
+              </StackPanel>
+              <Border Grid.Column="1" Background="#252525" BorderBrush="#3A3A3A" BorderThickness="1,0,0,0" CornerRadius="0,9,9,0">
+                <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="m6 9 6 6 6-6" Fill="Transparent" Stroke="#929292" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+              </Border>
+            </Grid>
+          </Button>
+        </Grid>
+
+        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
+          <Button Classes="capture" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="OnAreaTargetClick" ToolTip.Tip="Select an area to capture">
+            <StackPanel Spacing="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Viewbox Width="18" Height="18"><Path Data="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3" Fill="Transparent" Stroke="#898989" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+              <TextBlock Text="Area" FontSize="12" Foreground="#F0F0F0" />
+            </StackPanel>
+          </Button>
+          <Button x:Name="CameraOnlyButton" Classes="capture" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="OnCameraOnlyClick" ToolTip.Tip="Record from a camera only">
+            <StackPanel Spacing="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Viewbox Width="18" Height="18"><Path Data="M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm14 2 4-3v10l-4-3Z" Fill="Transparent" Stroke="#898989" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+              <TextBlock Text="Camera Only" FontSize="12" Foreground="#F0F0F0" />
+            </StackPanel>
+          </Button>
+        </Grid>
+
+        <!-- Optional capture inputs -->
+        <Border Grid.Row="6" Background="#292929" BorderBrush="#3B3B3B" BorderThickness="1" CornerRadius="9">
+          <Grid ColumnDefinitions="28,*,41" Margin="13,0,6,0">
+            <Viewbox Grid.Column="0" Width="16" Height="16" VerticalAlignment="Center"><Path Data="M3 8a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm13 2 5-3v10l-5-3Z" Fill="Transparent" Stroke="#8A8A8A" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+            <Button x:Name="CameraDeviceButton" Grid.Column="1" Content="Choose Camera" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Foreground="#F0F0F0" Padding="0" FontSize="13" VerticalAlignment="Center" Click="OnChooseCamera" />
+            <Button x:Name="CameraAudioButton" Grid.Column="2" Classes="audio-status" Content="Off" VerticalAlignment="Center" Click="OnCameraAudioClick" />
+          </Grid>
+        </Border>
+        <Border Grid.Row="8" Background="#292929" BorderBrush="#3B3B3B" BorderThickness="1" CornerRadius="9">
+          <Grid ColumnDefinitions="28,*,41" Margin="13,0,6,0">
+            <Viewbox Grid.Column="0" Width="16" Height="16" VerticalAlignment="Center"><Path Data="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Zm-7 9a7 7 0 0 0 14 0m-7 7v4m-4 0h8" Fill="Transparent" Stroke="#8A8A8A" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+            <Button x:Name="MicrophoneDeviceButton" Grid.Column="1" Content="Choose Microphone" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Foreground="#F0F0F0" Padding="0" FontSize="13" VerticalAlignment="Center" Click="OnChooseMicrophone" />
+            <Button x:Name="MicrophoneAudioButton" Grid.Column="2" Classes="audio-status" Content="Off" VerticalAlignment="Center" Click="OnMicrophoneClick" />
+          </Grid>
+        </Border>
+        <Border Grid.Row="10" Background="#292929" BorderBrush="#3B3B3B" BorderThickness="1" CornerRadius="9">
+          <Grid ColumnDefinitions="28,*,41" Margin="13,0,6,0">
+            <Viewbox Grid.Column="0" Width="16" Height="16" VerticalAlignment="Center"><Path Data="M3 5h18v12H3zM8 21h8m-4-4v4" Fill="Transparent" Stroke="#8A8A8A" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+            <Button x:Name="SystemAudioDeviceButton" Grid.Column="1" Content="Choose Loopback" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Foreground="#F0F0F0" Padding="0" FontSize="13" VerticalAlignment="Center" Click="OnChooseSystemAudio" />
+            <Button x:Name="SystemAudioStatusButton" Grid.Column="2" Classes="audio-status" Content="Off" VerticalAlignment="Center" Click="OnSystemAudioClick" />
+          </Grid>
+        </Border>
+      </Grid>
+      <Border x:Name="CaptureStatusToast"
+              Grid.Row="1"
+              IsVisible="False"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Bottom"
+              Margin="14,0,14,18"
+              Padding="10,7"
+              Background="#2A2A2A"
+              BorderBrush="#414141"
+              BorderThickness="1"
+              CornerRadius="9">
+        <TextBlock x:Name="CaptureStatus"
+                   FontSize="11"
+                   Foreground="#F0F0F0"
+                   TextWrapping="Wrap"
+                   MaxWidth="285" />
+      </Border>
+    </Grid>
+  </Border>
+</Window>
