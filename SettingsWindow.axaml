@@ -7,21 +7,23 @@
         MinWidth="720"
         MinHeight="620"
         WindowStartupLocation="CenterOwner"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="44"
         Background="#111111"
         RequestedThemeVariant="Dark">
 
   <Window.Resources>
     <StreamGeometry x:Key="GearIcon">M12 2 14 4.2 16.8 4.7 19.4 3.6 21.4 5.6 20.3 8.2 20.8 11 23 12 22 14.1 19.8 15.1 19.3 17.9 20.4 20.5 18.4 22.5 15.8 21.4 13 21.9 12 24 10 23 9 20.8 6.2 20.3 3.6 21.4 1.6 19.4 2.7 16.8 2.2 14 0 13 1 11 3.2 10 3.7 7.2 2.6 4.6 4.6 2.6 7.2 3.7 10 3.2Z M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z</StreamGeometry>
     <StreamGeometry x:Key="SlidersIcon">M4 6h16M4 12h16M4 18h16M8 3v6m8 0v6m-5 0v6</StreamGeometry>
-    <StreamGeometry x:Key="ShortcutIcon">M8 3H6a3 3 0 0 0-3 3v2m13-5h2a3 3 0 0 1 3 3v2M3 16v2a3 3 0 0 0 3 3h2m8 0h2a3 3 0 0 0 3-3v-2M8 12h8m-4-4v8</StreamGeometry>
+    <StreamGeometry x:Key="ShortcutIcon">M7.50001 7.50001V5.41668C7.50001 4.26608 6.56727 3.33334 5.41668 3.33334C4.26608 3.33334 3.33334 4.26608 3.33334 5.41668C3.33334 6.56727 4.26608 7.50001 5.41668 7.50001H7.50001ZM7.50001 7.50001H12.5M7.50001 7.50001V12.5M12.5 7.50001V5.41668C12.5 4.26608 13.4328 3.33334 14.5833 3.33334C15.7339 3.33334 16.6667 4.26608 16.6667 5.41668C16.6667 6.56727 15.7339 7.50001 14.5833 7.50001H12.5M12.5 7.50001V12.5M12.5 12.5H7.50001M12.5 12.5V14.5833C12.5 15.7339 13.4328 16.6667 14.5833 16.6667C15.7339 16.6667 16.6667 15.7339 16.6667 14.5833C16.6667 13.4328 15.7339 12.5 14.5833 12.5H12.5M7.50001 12.5V14.5833C7.50001 15.7339 6.56727 16.6667 5.41668 16.6667C4.26608 16.6667 3.33334 15.7339 3.33334 14.5833C3.33334 13.4328 4.26608 12.5 5.41668 12.5H7.50001Z</StreamGeometry>
     <StreamGeometry x:Key="TerminalIcon">M4 6l6 6-6 6m8 0h8</StreamGeometry>
-    <StreamGeometry x:Key="RecordingsIcon">M4 4h16v16H4z M10 8v8l6-4Z</StreamGeometry>
-    <StreamGeometry x:Key="ImageIcon">M4 4h16v16H4z M4 15l4-4 4 4 3-3 5 5 M15 8h.01</StreamGeometry>
+    <StreamGeometry x:Key="RecordingsIcon">M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM10 9v6l5-3Z</StreamGeometry>
+    <StreamGeometry x:Key="ImageIcon">M13.3333 16.6667 8.43444 11.7678C7.45813 10.7915 5.87522 10.7915 4.89891 11.7678L3.33334 13.3333M5.83334 16.6667H14.1667C15.5474 16.6667 16.6667 15.5474 16.6667 14.1667V5.83334C16.6667 4.45263 15.5474 3.33334 14.1667 3.33334H5.83334C4.45263 3.33334 3.33334 4.45263 3.33334 5.83334V14.1667C3.33334 15.5474 4.45263 16.6667 5.83334 16.6667ZM13.75 7.91668C13.75 8.83715 13.0038 9.58334 12.0833 9.58334C11.1629 9.58334 10.4167 8.83715 10.4167 7.91668C10.4167 6.9962 11.1629 6.25001 12.0833 6.25001C13.0038 6.25001 13.75 6.9962 13.75 7.91668Z</StreamGeometry>
     <StreamGeometry x:Key="BoltIcon">M13 2 4 13h6l-1 9 9-12h-6Z</StreamGeometry>
-    <StreamGeometry x:Key="TranscriptIcon">M4 5h16v14H4z M7 9h10m-10 3h10m-10 3h6</StreamGeometry>
-    <StreamGeometry x:Key="PlugIcon">M9 3v6m6-6v6M6 9h12v3a6 6 0 0 1-12 0Zm6 9v3</StreamGeometry>
+    <StreamGeometry x:Key="TranscriptIcon">M3 5h18v14H3z M7 15h4m4 0h2M7 11h2m4 0h4</StreamGeometry>
+    <StreamGeometry x:Key="PlugIcon">M19 5 22 2M2 22l3-3M12.5 17.5 6.5 11.5M5 8l5-5m-2 2 8 8m-5-7-3 3m5-1-3 3m-5 2-2 2a6 6 0 0 0 8.5 8.5l2-2</StreamGeometry>
     <StreamGeometry x:Key="GiftIcon">M3 10h18v11H3z M2 6h20v4H2z M12 6v15m0-15H8a2 2 0 1 1 2-2c1 1 2 2 2 2Zm0 0h4a2 2 0 1 0-2-2c-1 1-2 2-2 2Z</StreamGeometry>
-    <StreamGeometry x:Key="FeedbackIcon">M4 4h16v13H9l-5 4z M8 10h8m-4-4v8</StreamGeometry>
+    <StreamGeometry x:Key="FeedbackIcon">M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4zM12 8v6m-3-3h6</StreamGeometry>
     <StreamGeometry x:Key="BellIcon">M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4</StreamGeometry>
     <StreamGeometry x:Key="AccountIcon">M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9a8 8 0 0 1 16 0</StreamGeometry>
   </Window.Resources>
@@ -29,7 +31,8 @@
   <Window.Styles>
     <Style Selector="Button.nav">
       <Setter Property="Height" Value="32" />
-      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Foreground" Value="#E5E5E5" />
@@ -41,16 +44,16 @@
       <Setter Property="Background" Value="#292929" />
     </Style>
     <Style Selector="Button.nav.selected">
-      <Setter Property="Background" Value="#303030" />
+      <Setter Property="Background" Value="#2C2C2C" />
       <Setter Property="Foreground" Value="#F5F5F5" />
     </Style>
     <Style Selector="Button.theme-card">
       <Setter Property="Padding" Value="0" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Foreground" Value="#A8A8A8" />
-      <Setter Property="CornerRadius" Value="11" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Button.theme-card:pointerover">
       <Setter Property="Foreground" Value="#F0F0F0" />
@@ -69,73 +72,73 @@
     </Style>
   </Window.Styles>
 
-  <Grid ColumnDefinitions="228,*">
+  <Grid ColumnDefinitions="227,*">
     <!-- Settings navigation -->
-    <Border Grid.Column="0" Background="#1D1D1D" BorderBrush="#2C2C2C" BorderThickness="0,0,1,0">
+    <Border Grid.Column="0" Background="#161616" BorderBrush="#2C2C2C" BorderThickness="0,0,1,0">
       <Grid RowDefinitions="Auto,*,Auto">
-        <Grid Grid.Row="0" Margin="14,14,12,18" ColumnDefinitions="34,*" Height="42">
-          <Border Width="32" Height="32" CornerRadius="18" Background="#353535" VerticalAlignment="Center">
-            <PathIcon Data="{StaticResource AccountIcon}" Width="19" Height="19" Foreground="#D0D0D0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Grid Grid.Row="0" Margin="13,45.5,12,16.5" ColumnDefinitions="34,*" Height="42">
+          <Border Width="32" Height="32" CornerRadius="18" Background="#303030" VerticalAlignment="Center">
+            <Path Data="{StaticResource AccountIcon}" Width="16" Height="16" Stroke="#D0D0D0" StrokeThickness="1.5" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
           </Border>
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0" Spacing="1">
-            <TextBlock Text="Local workspace" FontSize="13" Foreground="#F2F2F2" />
-            <TextBlock Text="This device" FontSize="12" Foreground="#999999" />
+            <TextBlock Text="Agastya Khati" FontSize="13" Foreground="#F2F2F2" />
+            <TextBlock Text="Account" FontSize="11" Foreground="#999999" />
           </StackPanel>
         </Grid>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Margin="10,0,10,10" Spacing="2">
+          <StackPanel Margin="10,0,10,10" Spacing="4" HorizontalAlignment="Stretch">
             <Button x:Name="NavGeneral" Classes="nav selected" Tag="General" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10">
-                <PathIcon Data="{StaticResource GearIcon}" Width="15" Height="15" Foreground="#1684FF" VerticalAlignment="Center" />
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6">
+                <Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path x:Name="NavGeneralIcon" Data="{StaticResource GearIcon}" Fill="Transparent" Stroke="#0A84FF" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
                 <TextBlock Grid.Column="1" Text="General" VerticalAlignment="Center" />
               </Grid>
             </Button>
             <Button x:Name="NavQuality" Classes="nav" Tag="Recording quality" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource SlidersIcon}" Width="15" Height="15" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Recording quality" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path x:Name="NavQualityIcon" Data="{StaticResource SlidersIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Recording quality" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Shortcuts" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource ShortcutIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Shortcuts" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource ShortcutIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Shortcuts" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="CLI" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource TerminalIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="CLI" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource TerminalIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="CLI" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Recordings" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource RecordingsIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Recordings" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource RecordingsIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Recordings" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Screenshots" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource ImageIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Screenshots" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource ImageIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Screenshots" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Automations" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource BoltIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Automations" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource BoltIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Automations" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Transcription" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource TranscriptIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Transcription" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource TranscriptIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Transcription" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Integrations" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource PlugIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Integrations" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource PlugIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Integrations" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Plan &amp; license" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource GiftIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Plan &amp; license" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource GiftIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Plan &amp; license" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Experimental" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource GearIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Experimental" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource GearIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Experimental" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Feedback" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource FeedbackIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Feedback" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource FeedbackIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Feedback" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Changelog" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="20,*" ColumnSpacing="10"><PathIcon Data="{StaticResource BellIcon}" Width="15" Height="15" Foreground="#A4A4A4" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="Changelog" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource BellIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Changelog" VerticalAlignment="Center" /></Grid>
             </Button>
           </StackPanel>
         </ScrollViewer>
 
-        <Border Grid.Row="2" BorderBrush="#303030" BorderThickness="0,1,0,0" Padding="10,8,10,10">
-          <StackPanel Spacing="6">
-            <TextBlock Text="Avalonia port" FontSize="11" Foreground="#999999" Margin="0,0,0,1" />
-            <Button Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Left" Foreground="#777777" FontSize="11" Content="View previous versions" IsEnabled="False" ToolTip.Tip="Online release history is not connected." />
-            <Button Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Left" Foreground="#777777" FontSize="11" Content="Check for updates" IsEnabled="False" ToolTip.Tip="The updater is not connected in this build." />
-            <Button Classes="action" Content="Local only" Margin="0,3,0,0" IsEnabled="False" ToolTip.Tip="No Cap account is signed in." />
+        <Border Grid.Row="2" BorderBrush="#303030" BorderThickness="0,1,0,0" Padding="10,5,10,10">
+          <StackPanel Spacing="9">
+            <TextBlock Text="v0.6.0" FontSize="12" Foreground="#999999" Margin="0,0,0,1" />
+            <Button Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Left" Foreground="#A1A1A1" FontSize="12" Content="View previous versions" IsHitTestVisible="False" Focusable="False" ToolTip.Tip="Online release history is not connected." />
+            <Button Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Left" Foreground="#A1A1A1" FontSize="12" Content="Check for updates" IsHitTestVisible="False" Focusable="False" ToolTip.Tip="The updater is not connected in this build." />
+            <Button Classes="action footer-login" Content="Sign Out" Margin="0,3,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsHitTestVisible="False" Focusable="False" ToolTip.Tip="Cap account sign-out is not connected in this build." />
           </StackPanel>
         </Border>
       </Grid>
@@ -143,61 +146,53 @@
 
     <!-- The General page mirrors Cap's Appearance, App, and Recording settings. -->
     <ScrollViewer Grid.Column="1" x:Name="GeneralContent" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="20,18,20,24" Spacing="28">
+      <StackPanel Margin="20.5,21,27,24" Spacing="30">
         <StackPanel Spacing="4">
           <TextBlock Text="Appearance" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
-          <TextBlock Text="Choose the look used by this Cap Avalonia build." FontSize="12" Foreground="#A1A1A1" />
-          <Border Margin="-4,8,-4,0" Padding="16" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <TextBlock Text="Match Cap to your system theme or pick a fixed look." FontSize="12" Foreground="#A1A1A1" />
+          <Border Margin="-4,8,-4,0" Padding="16" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
-              <Button Classes="theme-card" Grid.Column="0" IsEnabled="False" ToolTip.Tip="System theme switching is not available in this build.">
-                <StackPanel Spacing="7">
-                  <Border Height="88" CornerRadius="9" BorderBrush="#333333" BorderThickness="1" ClipToBounds="True" Background="#F2F2F2">
-                    <Grid ColumnDefinitions="36,*">
-                      <Border Grid.Column="0" Background="#303039" />
-                      <StackPanel Grid.Column="1" Margin="7" Spacing="5" VerticalAlignment="Center">
-                        <Border Height="17" Background="#FFFFFF" CornerRadius="4"><Grid ColumnDefinitions="*,13"><Border Margin="5,7,14,7" Background="#454545" CornerRadius="3"/><Ellipse Grid.Column="1" Width="9" Height="9" Fill="#FB365B" VerticalAlignment="Center"/></Grid></Border>
-                        <Border Height="17" Background="#FFFFFF" CornerRadius="4"><Grid ColumnDefinitions="*,13"><Border Margin="5,7,26,7" Background="#454545" CornerRadius="3"/><Ellipse Grid.Column="1" Width="9" Height="9" Fill="#3A87FF" VerticalAlignment="Center"/></Grid></Border>
-                        <Border Height="17" Background="#FFFFFF" CornerRadius="4"><Grid ColumnDefinitions="*,13"><Border Margin="5,7,18,7" Background="#454545" CornerRadius="3"/><Ellipse Grid.Column="1" Width="9" Height="9" Fill="#3A87FF" VerticalAlignment="Center"/></Grid></Border>
-                      </StackPanel>
-                    </Grid>
+              <Button Classes="theme-card selected" Grid.Column="0" HorizontalAlignment="Stretch" IsEnabled="False" ToolTip.Tip="The reference Cap app uses the system theme.">
+                <StackPanel Spacing="9" HorizontalAlignment="Stretch">
+                  <Border Height="91" CornerRadius="8" BorderBrush="#0A84FF" BorderThickness="2" ClipToBounds="True">
+                    <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-auto.jpg" Stretch="UniformToFill" />
                   </Border>
-                  <TextBlock Text="System" FontSize="12" HorizontalAlignment="Center" />
+                  <TextBlock Text="System" FontSize="12" FontWeight="Medium" Foreground="#F2F2F2" HorizontalAlignment="Center" />
                 </StackPanel>
               </Button>
-              <Button Classes="theme-card" Grid.Column="1" IsEnabled="False" ToolTip.Tip="Light theme is not available in this build.">
-                <StackPanel Spacing="7">
-                  <Border Height="88" CornerRadius="9" BorderBrush="#333333" BorderThickness="1" ClipToBounds="True" Background="#F3F3F3">
-                    <Grid ColumnDefinitions="36,*"><Border Background="#4282F5"/><StackPanel Grid.Column="1" Margin="7" Spacing="5" VerticalAlignment="Center"><Border Height="17" Background="#FFFFFF" CornerRadius="4"><Border Margin="8,7,34,7" Background="#3D3D3D" CornerRadius="3"/></Border><Border Height="17" Background="#FFFFFF" CornerRadius="4"><Border Margin="8,7,21,7" Background="#3D3D3D" CornerRadius="3"/></Border><Border Height="17" Background="#FFFFFF" CornerRadius="4"><Border Margin="8,7,39,7" Background="#3D3D3D" CornerRadius="3"/></Border></StackPanel></Grid>
+              <Button Classes="theme-card" Grid.Column="1" HorizontalAlignment="Stretch" IsEnabled="False" ToolTip.Tip="Light theme is not available in this build.">
+                <StackPanel Spacing="9" HorizontalAlignment="Stretch">
+                  <Border Height="91" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" ClipToBounds="True">
+                    <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-light.jpg" Stretch="UniformToFill" />
                   </Border>
-                  <TextBlock Text="Light" FontSize="12" HorizontalAlignment="Center" />
+                  <TextBlock Text="Light" FontSize="12" FontWeight="Medium" Foreground="#8E8E8E" HorizontalAlignment="Center" />
                 </StackPanel>
               </Button>
-              <Button Classes="theme-card selected" Grid.Column="2" IsEnabled="False" ToolTip.Tip="Dark theme is active.">
-                <StackPanel Spacing="7">
-                  <Border Height="88" CornerRadius="9" BorderBrush="#333333" BorderThickness="1" ClipToBounds="True" Background="#25252C">
-                    <Grid ColumnDefinitions="36,*"><Border Background="#28264B"/><StackPanel Grid.Column="1" Margin="7" Spacing="5" VerticalAlignment="Center"><Border Height="17" Background="#151515" CornerRadius="4"><Border Margin="8,7,30,7" Background="#E0E0E0" CornerRadius="3"/></Border><Border Height="17" Background="#151515" CornerRadius="4"><Border Margin="8,7,20,7" Background="#E0E0E0" CornerRadius="3"/></Border><Border Height="17" Background="#151515" CornerRadius="4"><Border Margin="8,7,37,7" Background="#E0E0E0" CornerRadius="3"/></Border></StackPanel></Grid>
+              <Button Classes="theme-card" Grid.Column="2" HorizontalAlignment="Stretch" IsEnabled="False" ToolTip.Tip="Dark theme is active.">
+                <StackPanel Spacing="9" HorizontalAlignment="Stretch">
+                  <Border Height="91" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" ClipToBounds="True">
+                    <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-dark.jpg" Stretch="UniformToFill" />
                   </Border>
-                  <TextBlock Text="Dark" FontSize="12" HorizontalAlignment="Center" />
+                  <TextBlock Text="Dark" FontSize="12" FontWeight="Medium" Foreground="#8E8E8E" HorizontalAlignment="Center" />
                 </StackPanel>
               </Button>
             </Grid>
           </Border>
-          <TextBlock Text="This build currently uses the dark theme." FontSize="11" Foreground="#888888" Margin="2,5,0,0" />
         </StackPanel>
 
         <StackPanel Spacing="4">
           <TextBlock Text="App" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
-          <TextBlock Text="Choose how Cap Avalonia shows up on your system." FontSize="12" Foreground="#A1A1A1" />
-          <Border Margin="-4,8,-4,0" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <TextBlock Text="Choose how Cap shows up on your system." FontSize="12" Foreground="#A1A1A1" />
+          <Border Margin="-4,8,-4,0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <StackPanel>
-              <Grid MinHeight="63" ColumnDefinitions="*,Auto" Margin="12,8,12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Always show dock icon" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Dock visibility is controlled by the operating system in this build." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Dock behavior is controlled by the operating system." />
+              <Grid MinHeight="47" ColumnDefinitions="*,Auto" Margin="12,8,12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Always show dock icon" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Keep Cap in the dock even when no windows are open." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <ToggleSwitch Grid.Column="1" Tag="Always show dock icon" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="77" ColumnDefinitions="*,Auto" Margin="12,8,12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="System notifications" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Native system notifications are not connected in this build." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Native system notifications are not connected." />
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8,12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="System notifications" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Show notifications for clipboard copies, saved files, and more. You may need to allow Cap in your system's notification settings." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <ToggleSwitch Grid.Column="1" Tag="System notifications" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
             </StackPanel>
           </Border>
@@ -206,76 +201,76 @@
         <StackPanel Spacing="4">
           <TextBlock Text="Recording" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
           <TextBlock Text="Behaviour while you record and after you stop." FontSize="12" Foreground="#A1A1A1" />
-          <Border Margin="-4,8,-4,0" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <Border Margin="-4,8,-4,0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <StackPanel>
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Countdown" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Wait before the recording starts." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
                 <ComboBox Grid.Column="1" SelectedIndex="1" Width="100" Height="29" VerticalAlignment="Center" Background="#282828" BorderBrush="#383838" Foreground="#EEEEEE" CornerRadius="9">
                   <ComboBoxItem Content="No countdown"/><ComboBoxItem Content="3 seconds"/><ComboBoxItem Content="5 seconds"/>
                 </ComboBox>
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Confirm before recording without a microphone" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Ask before recording while the microphone is turned off." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" />
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Confirm before recording without a microphone" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Require confirmation when no microphone is selected or the selected microphone is unavailable." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Studio Sound on new recordings" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Clean up microphone audio automatically. You can still turn it off for any recording in the editor." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Main window when recording starts" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Choose what happens to the recorder window." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Main window when recording starts" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="What happens to the main window once a recording begins." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
                 <ComboBox Grid.Column="1" SelectedIndex="0" Width="74" Height="29" VerticalAlignment="Center" Background="#282828" BorderBrush="#383838" Foreground="#EEEEEE" CornerRadius="9"><ComboBoxItem Content="Close"/><ComboBoxItem Content="Minimize"/><ComboBoxItem Content="Keep open"/></ComboBox>
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="After a Studio recording" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="What happens once you stop a Studio recording." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
                 <ComboBox Grid.Column="1" SelectedIndex="0" Width="158" Height="29" VerticalAlignment="Center" Background="#282828" BorderBrush="#383838" Foreground="#EEEEEE" CornerRadius="9"><ComboBoxItem Content="Open editor"/><ComboBoxItem Content="Open in video player"/></ComboBox>
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="After deleting a recording" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Whether the recording window should reopen." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
                 <ComboBox Grid.Column="1" SelectedIndex="0" Width="148" Height="29" VerticalAlignment="Center" Background="#282828" BorderBrush="#383838" Foreground="#EEEEEE" CornerRadius="9"><ComboBoxItem Content="Do nothing"/><ComboBoxItem Content="Reopen window"/></ComboBox>
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Delete Instant recordings after upload" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="This build saves Instant recordings locally and has no upload service." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Upload and delete behavior is unavailable in this local-only build." />
+                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Upload and delete behavior is unavailable in this local-only build." />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="68" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Crash-recoverable recording" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Record in fragments that can be recovered after a crash or power loss. Uses slightly more space during capture." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="68" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Show pointer in screen recordings" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Include the system pointer in screen captures." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" />
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Custom cursor capture (Studio)" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Capture cursor state separately so you can adjust size and smoothing in the editor." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <ToggleSwitch Grid.Column="1" Tag="Custom cursor capture (Studio)" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="68" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Auto zoom on clicks" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Click tracking is not available in this build." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Click tracking is not available in this build." />
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Auto zoom on clicks" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Automatically add zoom segments around mouse clicks in Studio recordings." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Click tracking is not available in this build." />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Default zoom amount" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Zoom segments are not available in this editor." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"><Slider Minimum="1" Maximum="4.5" Value="1.5" Width="110" IsEnabled="False"/><TextBlock Text="1.5x" FontSize="12" Foreground="#777777" VerticalAlignment="Center"/></StackPanel>
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Capture keyboard presses" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Keyboard overlays are not available in this editor." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Keyboard overlays are not available in this editor." />
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Capture keyboard presses" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Record key presses so you can add keyboard overlays in the editor." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
+                <ToggleSwitch Grid.Column="1" Tag="Capture keyboard presses" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="82" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Draw the MacBook notch on screen recordings" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Notch restoration is not available in this build." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Notch restoration is not available in this build." />
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Draw the MacBook notch on screen recordings" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Automatically restores the notch for new screen and area recordings when the selected region contains the complete notch. External displays, partial areas, and window recordings are left alone. Each recording can override it in the editor." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <ToggleSwitch Grid.Column="1" Tag="Draw the MacBook notch on screen recordings" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
-              <Border Height="1" Background="#2F2F2F" />
-              <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8">
+              <Border Height="1" Background="#2A2A2A" />
+              <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Max capture framerate" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Maximum framerate for screen capture." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
                 <ComboBox Grid.Column="1" SelectedIndex="1" Width="108" Height="29" VerticalAlignment="Center" Background="#282828" BorderBrush="#383838" Foreground="#EEEEEE" CornerRadius="9"><ComboBoxItem Content="30 FPS"/><ComboBoxItem Content="60 FPS"/><ComboBoxItem Content="90 FPS"/><ComboBoxItem Content="120 FPS"/></ComboBox>
               </Grid>
@@ -286,7 +281,7 @@
         <StackPanel Spacing="4">
           <TextBlock Text="Storage" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
           <TextBlock Text="Where Cap saves your recordings." FontSize="12" Foreground="#A1A1A1" />
-          <Border Margin="-4,8,-4,0" Padding="12" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <Border Margin="-4,8,-4,0" Padding="12" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <StackPanel Spacing="10">
               <Border Padding="9,7" Background="#242424" CornerRadius="8"><TextBlock x:Name="RecordingFolderDisplay" Text="Default (Application Support)" FontSize="12" FontFamily="monospace" Foreground="#E5E5E5" TextTrimming="CharacterEllipsis" /></Border>
               <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
@@ -300,7 +295,7 @@
         <StackPanel Spacing="4">
           <TextBlock Text="Default project name" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
           <TextBlock Text="Template used for new recordings and exported files." FontSize="12" Foreground="#A1A1A1" />
-          <Border Margin="-4,8,-4,0" Padding="12" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <Border Margin="-4,8,-4,0" Padding="12" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <StackPanel Spacing="9">
               <TextBox x:Name="ProjectNameInput" Tag="project-name" Text="{}{target_name} ({target_kind}) {date} {time}" TextChanged="OnProjectNameChanged" Background="#242424" BorderBrush="#383838" Foreground="#E5E5E5" FontFamily="monospace" MinHeight="34" />
               <Border Padding="9,7" Background="#242424" BorderBrush="#353535" BorderThickness="1" CornerRadius="8"><TextBlock x:Name="ProjectNamePreview" Text="Screen Recording (Display) 2026-10-06 09-41" FontSize="12" Foreground="#D8D8D8" TextWrapping="Wrap" /></Border>
@@ -312,7 +307,7 @@
         <StackPanel Spacing="4">
           <TextBlock Text="Excluded windows" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
           <TextBlock Text="Hide windows from recordings." FontSize="12" Foreground="#A1A1A1" />
-          <Border Margin="-4,8,-4,0" Padding="12" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <Border Margin="-4,8,-4,0" Padding="12" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Window-level exclusion is not available in this build." FontSize="12" Foreground="#A0A0A0" VerticalAlignment="Center"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"><Button Content="Reset" Classes="action" Padding="12,0" IsEnabled="False"/><Button Content="+  Add" Classes="action" Padding="12,0" IsEnabled="False" /></StackPanel></Grid>
           </Border>
         </StackPanel>
@@ -320,7 +315,7 @@
         <StackPanel Spacing="4">
           <TextBlock Text="Updates" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
           <TextBlock Text="Automatic updates are not included in the Avalonia port." FontSize="12" Foreground="#A1A1A1" />
-          <Border Margin="-4,8,-4,0" Padding="12" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <Border Margin="-4,8,-4,0" Padding="12" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="3"><TextBlock Text="Update channel" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Cap's automatic updater is not included in this port." FontSize="12" Foreground="#A0A0A0"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"><Button Content="Stable" Classes="action" Padding="12,0" IsEnabled="False"/><Button Content="Nightly" Classes="action" Padding="12,0" IsEnabled="False"/></StackPanel></Grid>
               <Border Padding="9,7" Background="#242424" CornerRadius="8"><TextBlock Text="Updates are managed manually for this build." FontSize="12" Foreground="#C7C7C7" /></Border>
@@ -331,7 +326,7 @@
         <StackPanel Spacing="4">
           <TextBlock Text="Self-host" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
           <TextBlock Text="Server configuration is unavailable because online services are not connected." FontSize="12" Foreground="#A1A1A1" TextWrapping="Wrap" />
-          <Border Margin="-4,8,-4,0" Padding="12" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <Border Margin="-4,8,-4,0" Padding="12" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <StackPanel Spacing="8">
               <TextBlock Text="Cap Server URL" FontSize="13" Foreground="#F1F1F1" />
               <TextBox Tag="server-url" Text="https://cap.so" Background="#242424" BorderBrush="#383838" Foreground="#E5E5E5" MinHeight="34" IsEnabled="False" ToolTip.Tip="Self-hosted services are not connected." />
@@ -342,10 +337,10 @@
 
         <StackPanel Spacing="4">
           <TextBlock Text="Privacy" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
-          <Border Margin="-4,8,-4,0" Background="#1A1A1A" BorderBrush="#2D2D2D" BorderThickness="1" CornerRadius="12">
+          <Border Margin="-4,8,-4,0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <Grid MinHeight="74" ColumnDefinitions="*,Auto" Margin="12,8">
               <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Share anonymous telemetry" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="This app does not collect or send telemetry." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-              <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="38" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="This app does not send telemetry." />
+              <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="This app does not send telemetry." />
             </Grid>
           </Border>
         </StackPanel>
@@ -353,7 +348,7 @@
     </ScrollViewer>
 
     <ScrollViewer x:Name="OtherPageContent" Grid.Column="1" IsVisible="False" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel x:Name="OtherPageBody" Margin="20,18,20,24" Spacing="28" />
+      <StackPanel x:Name="OtherPageBody" Margin="20,20.5,27,24" Spacing="28" />
     </ScrollViewer>
   </Grid>
 </Window>

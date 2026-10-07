@@ -67,8 +67,8 @@ public partial class SettingsWindow : Window
             else if (!selected)
                 button.Classes.Remove("selected");
 
-            foreach (var icon in button.GetVisualDescendants().OfType<PathIcon>())
-                icon.Foreground = new SolidColorBrush(Color.Parse(selected ? "#1684FF" : "#A4A4A4"));
+            foreach (var icon in button.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>())
+                icon.Stroke = new SolidColorBrush(Color.Parse(selected ? "#0A84FF" : "#A4A4A4"));
         }
 
         var isGeneral = section == "General";

@@ -14,6 +14,7 @@ namespace CapAvalonia;
 internal static class SettingsPageFactory
 {
     private static readonly IBrush PanelBrush = Brush("#1A1A1A");
+    private static readonly IBrush CardBrush = Brush("#1C1C1C");
     private static readonly IBrush PanelBorderBrush = Brush("#2D2D2D");
     private static readonly IBrush TextBrush = Brush("#F1F1F1");
     private static readonly IBrush MutedBrush = Brush("#A1A1A1");
@@ -25,7 +26,7 @@ internal static class SettingsPageFactory
         "CLI" => BuildCliPage(),
         "Recordings" => BuildRecordingsPage(owner),
         "Screenshots" => BuildScreenshotsPage(owner),
-        "Automations" => BuildAutomationsPage(owner),
+        "Automations" => BuildAutomationsPage(),
         "Transcription" => BuildTranscriptionPage(),
         "Integrations" => BuildIntegrationsPage(),
         "Plan & license" => BuildLicensePage(),
@@ -43,40 +44,83 @@ internal static class SettingsPageFactory
             ("Maximum detail", "", "Preserves more detail for demanding edits. Creates larger files and needs more disk space."));
 
         var instantChoices = ResolutionChoices();
-        var shareRows = Card(DisabledToggleRow("Open share links automatically", "Share links are unavailable until uploads are connected."));
+        var shareRows = Card(DisabledToggleRow("Open share links automatically", "Open the link in your browser when an upload finishes."));
+        var studioSection = Section("Studio", "Saved to your computer, ready to edit. All three quality options are available on every plan.",
+            Card(studioChoices,
+                Label("These options affect the original recording. Choose your final export resolution and file size in the editor.", 12, MutedBrush, wrap: true, margin: new Thickness(12, 8, 12, 19)),
+                new Border { Height = 2.5 }), contentTopMargin: 9.5);
+        studioSection.Margin = new Thickness(0, 0, 0, -3);
 
         return Page("Recording quality", "Choose how new recordings look and how much space they use.",
-            Section("Studio", "Saved to your computer, ready to edit. All three quality options are available on every plan.",
-                Card(studioChoices, Note("These options affect the original recording. Choose your final export resolution and file size in the editor."))),
-            Section("Instant", "Instant is local-only in this Avalonia build. There is no upload or share-link service.",
-                Card(Label("Maximum resolution", 13, TextBrush, margin: new Thickness(12, 12, 12, 2)), instantChoices,
-                    Note("Upload resolution choices become available when Cap's online service is connected."))),
-            Section("Sharing", "Share links are unavailable while uploads are disconnected.", shareRows));
+            studioSection,
+            Section("Instant", "Uploads while you record, so your share link is ready when you stop.",
+                Card(Label("Maximum resolution", 13, TextBrush, weight: FontWeight.Medium, margin: new Thickness(16, 16, 16, 14.5)), instantChoices,
+                    Label("Smaller uploads. Good for quick updates. Resolution is limited by the screen or area you record.", 12, MutedBrush, wrap: true, margin: new Thickness(12, 10)),
+                    new Border { Height = 1, Background = Brush("#303030"), Margin = new Thickness(16, 16, 16, 0) },
+                    Label("720p is included. Cap Pro unlocks 1080p, 1440p and 4K for Instant recordings.", 12, MutedBrush, wrap: true, margin: new Thickness(12, 13.5, 12, 8)),
+                    CreateUnavailablePlansButton()), contentTopMargin: 8.5),
+            Section("Sharing", null, shareRows));
     }
 
     private static Control BuildShortcutsPage()
     {
         var shortcuts = new[]
         {
-            ("Start or stop recording", "record", "Primary+R"),
-            ("Take a screenshot", "screenshot", "Primary+Shift+S"),
-            ("Switch to Instant mode", "mode.instant", "Primary+D1"),
-            ("Switch to Studio mode", "mode.studio", "Primary+D2"),
-            ("Switch to Screenshot mode", "mode.screenshot", "Primary+D3")
+            ("Screenshot current display", "screenshot.display"),
+            ("Screenshot current window", "screenshot.window"),
+            ("Screenshot area picker", "screenshot.area"),
+            ("Open recording picker", "recording.picker"),
+            ("Stop recording", "recording.stop"),
+            ("Restart recording", "recording.restart"),
+            ("Pause/resume recording", "recording.pause"),
+            ("Cycle recording mode", "recording.cycle"),
+            ("Record display", "recording.display"),
+            ("Record window", "recording.window"),
+            ("Record area", "recording.area")
         };
 
-        var rows = shortcuts.Select(item => ShortcutRow(item.Item1, item.Item2, item.Item3)).ToArray();
-        return Page("Shortcuts", "Change shortcuts for when Cap Avalonia is focused. Select a key, then press the replacement combination.",
-            Card(WithSeparators(rows).ToArray()),
-            Note("System-wide hotkeys are not enabled in this Avalonia build. Press Escape while recording a shortcut to cancel."));
+        var rows = shortcuts.Select(item => ShortcutRow(item.Item1, item.Item2, "NONE")).ToArray();
+        var card = Card(WithSeparators(rows).ToArray());
+        card.Margin = new Thickness(-4, -3.5, -4, 0);
+        if (rows[0] is Grid firstRow)
+            firstRow.Margin = new Thickness(16, 7.5, 16, 4);
+        return PageWithHeader(PageHeader("Shortcuts", "Configure system-wide keyboard shortcuts to control Cap."), card);
     }
 
     private static Control BuildCliPage()
     {
-        return Page("Command Line", "Cap's command line installer is not included in this Avalonia build.",
-            Section("CLI", null, Card(
-                SettingRow("Status", "Not connected", DisabledAction("Install CLI", "The native Cap CLI service is not available."), 68),
-                Note("The Cap CLI install path and terminal commands are not configured for this app."))));
+        var installDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "bin");
+        var commandPath = Path.Combine(installDirectory, "cap");
+        var targetPath = Path.Combine(AppContext.BaseDirectory, "cap-cli");
+        var status = Label("Not installed", 13, TextBrush);
+        var description = Label("The desktop app installs a local cap command that points back to the bundled CLI.", 12, MutedBrush, wrap: true);
+        description.MaxWidth = 390;
+        description.LineHeight = 16;
+        var install = ActionButton("Install CLI", primary: true);
+        install.FontSize = 12;
+        install.Height = 28;
+        install.Padding = new Thickness(12, 0);
+        install.CornerRadius = new CornerRadius(15);
+        install.VerticalAlignment = VerticalAlignment.Top;
+        install.Click += (_, _) => ToolTip.SetTip(install, "CLI installation is not available in this Avalonia build.");
+
+        var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
+        var text = new StackPanel { Spacing = 6 };
+        text.Children.Add(status);
+        text.Children.Add(description);
+        heading.Children.Add(text);
+        Grid.SetColumn(install, 1);
+        heading.Children.Add(install);
+
+        var cardContent = new StackPanel { Spacing = 0, Margin = new Thickness(16, 17.5, 16, 17.5) };
+        cardContent.Children.Add(heading);
+        var paths = new StackPanel { Spacing = 8.5, Margin = new Thickness(0, 16, 0, 0) };
+        paths.Children.Add(CliPathRow("Command", commandPath));
+        paths.Children.Add(CliPathRow("Target", targetPath));
+        cardContent.Children.Add(paths);
+        var card = Card(cardContent);
+        card.Margin = new Thickness(-4, -3, -4, 0);
+        return PageWithHeader(PageHeader("Command Line", "Install the Cap command for terminals, agents, scripts, and local automation."), card);
     }
 
     private static Control BuildRecordingsPage(Window owner) => BuildLibraryPage(owner, screenshots: false);
@@ -86,14 +130,58 @@ internal static class SettingsPageFactory
     private static Control BuildLibraryPage(Window owner, bool screenshots)
     {
         var title = screenshots ? "Screenshots" : "Recordings";
-        var import = ActionButton(screenshots ? "Import image" : "Import", primary: false);
+        var import = ImportButton(screenshots ? "Import image" : "Import");
+        import.Margin = new Thickness(0, 2.5, -3, 0);
         var header = PageHeader(title, "Manage your " + title.ToLowerInvariant() + " and perform actions.", import);
         var search = (TextBox)SearchBox(screenshots ? "Search screenshots" : "Search recordings");
-        var itemsPanel = new StackPanel { Spacing = 8 };
+        var itemsPanel = new StackPanel { Spacing = 0 };
         var currentFilter = "Show all";
         var visibleCount = 20;
         var loadMore = ActionButton("Load more", primary: false);
         loadMore.HorizontalAlignment = HorizontalAlignment.Center;
+        var sourceItems = MediaLibraryService.GetItems(screenshots).ToArray();
+        var itemsCard = new Border
+        {
+            Background = PanelBrush,
+            BorderBrush = PanelBorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            Margin = new Thickness(0, 16, 0, 0),
+            MinHeight = 280,
+            Child = itemsPanel
+        };
+
+        var filterButtons = new List<Button>();
+        var filterRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        if (!screenshots)
+        {
+            foreach (var label in new[] { "Show all", "Instant", "Studio" })
+            {
+                var button = FilterButton(label);
+                button.Tag = label;
+                filterButtons.Add(button);
+                filterRow.Children.Add(button);
+            }
+            SelectLibraryFilter(filterButtons, filterButtons[0]);
+        }
+
+        filterRow.Margin = new Thickness(0, 0, 0, 8);
+        var controls = new StackPanel { Spacing = 0 };
+        if (!screenshots)
+            controls.Children.Add(filterRow);
+        controls.Children.Add(SearchField(search));
+        controls.Children.Add(new Border { Height = 1, Background = Brush("#303030"), Margin = new Thickness(0, 12, 0, 0) });
+
+        var emptyState = Label(screenshots ? "No screenshots found" : "No recordings found", 14, TextBrush,
+            align: HorizontalAlignment.Center, margin: new Thickness(0, 0, 0, 0));
+        var libraryView = new StackPanel { Spacing = 0 };
+        libraryView.Children.Add(controls);
+        libraryView.Children.Add(itemsCard);
+        var page = new StackPanel { Spacing = 0 };
+        page.Children.Add(header);
+        page.Children.Add(emptyState);
+        page.Children.Add(libraryView);
+
         loadMore.Click += (_, _) =>
         {
             visibleCount += 20;
@@ -103,14 +191,23 @@ internal static class SettingsPageFactory
         void RefreshItems()
         {
             itemsPanel.Children.Clear();
-            var filteredItems = MediaLibraryService.GetItems(screenshots)
+            sourceItems = MediaLibraryService.GetItems(screenshots).ToArray();
+            var filteredItems = sourceItems
                 .Where(item => item.Name.Contains(search.Text ?? string.Empty, StringComparison.OrdinalIgnoreCase))
                 .Where(item => screenshots || currentFilter == "Show all" || item.Mode == currentFilter)
                 .ToArray();
 
+            controls.IsVisible = sourceItems.Length > 0;
+            itemsCard.IsVisible = sourceItems.Length > 0;
+            emptyState.IsVisible = sourceItems.Length == 0;
+            libraryView.IsVisible = sourceItems.Length > 0;
+
             if (filteredItems.Length == 0)
             {
                 loadMore.IsVisible = false;
+                if (sourceItems.Length == 0)
+                    return;
+
                 var label = currentFilter != "Show all" && !screenshots
                     ? $"No {currentFilter} recordings found in this local library."
                     : !string.IsNullOrWhiteSpace(search.Text)
@@ -121,12 +218,25 @@ internal static class SettingsPageFactory
                 return;
             }
 
-            foreach (var item in filteredItems.Take(visibleCount))
-                itemsPanel.Children.Add(MediaItemCard(item, screenshots, owner, RefreshItems));
+            var visibleItems = filteredItems.Take(visibleCount).ToArray();
+            for (var index = 0; index < visibleItems.Length; index++)
+                itemsPanel.Children.Add(MediaItemCard(visibleItems[index], screenshots, owner, RefreshItems,
+                    index < visibleItems.Length - 1));
 
             loadMore.IsVisible = filteredItems.Length > visibleCount;
             if (loadMore.IsVisible)
                 itemsPanel.Children.Add(loadMore);
+        }
+
+        foreach (var button in filterButtons)
+        {
+            button.Click += (_, _) =>
+            {
+                currentFilter = button.Tag?.ToString() ?? "Show all";
+                visibleCount = 20;
+                SelectLibraryFilter(filterButtons, button);
+                RefreshItems();
+            };
         }
 
         import.Click += async (_, _) =>
@@ -155,109 +265,82 @@ internal static class SettingsPageFactory
             visibleCount = 20;
             RefreshItems();
         };
-        var sections = new List<Control>();
-
-        if (!screenshots)
-        {
-            var filterButtons = new List<Button>();
-            var filterRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            foreach (var label in new[] { "Show all", "Instant", "Studio" })
-            {
-                var button = ActionButton(label, primary: false);
-                button.Padding = new Thickness(14, 7);
-                button.CornerRadius = new CornerRadius(18);
-                button.Click += (_, _) =>
-                {
-                    currentFilter = label;
-                    visibleCount = 20;
-                    SelectChoice(filterButtons, button);
-                    RefreshItems();
-                };
-                filterButtons.Add(button);
-                filterRow.Children.Add(button);
-            }
-            SelectChoice(filterButtons, filterButtons[0]);
-            sections.Add(filterRow);
-        }
-
-        sections.Add(search);
-        sections.Add(itemsPanel);
         RefreshItems();
-        return PageWithHeader(header, sections.ToArray());
+        emptyState.Margin = new Thickness(0, 12, 0, 0);
+        return page;
     }
 
-    private static Control MediaItemCard(MediaLibraryItem item, bool screenshot, Window owner, Action refresh)
+    private static Control MediaItemCard(MediaLibraryItem item, bool screenshot, Window owner, Action refresh, bool hasSeparator)
     {
-        var details = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
-        details.Children.Add(Label(item.Name, 13, TextBrush, wrap: true, weight: FontWeight.Medium));
-        details.Children.Add(Label(screenshot
-            ? $"{item.Modified:g} · {MediaLibraryService.FormatSize(item.Size)}"
-            : $"{item.Mode} · {item.Modified:g} · {MediaLibraryService.FormatSize(item.Size)}", 11, MutedBrush));
+        var details = new StackPanel { Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        details.Children.Add(Label(item.Name, 14, TextBrush, wrap: true, weight: FontWeight.Medium));
 
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+        var badges = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        if (!screenshot)
+        {
+            var modeBadge = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+            modeBadge.Children.Add(new Avalonia.Controls.Shapes.Path
+            {
+                Width = 12,
+                Height = 12,
+                Data = Geometry.Parse("M3 7h18v13H3z M3 7l2-4 4 2 2-3 4 2 3-2 3 5"),
+                Stroke = TextBrush,
+                StrokeThickness = 1.5,
+                StrokeLineCap = PenLineCap.Round,
+            });
+            modeBadge.Children.Add(Label(item.Mode, 11, TextBrush));
+            badges.Children.Add(new Border
+            {
+                Padding = new Thickness(8, 4),
+                Background = Brush("#292929"),
+                CornerRadius = new CornerRadius(16),
+                Child = modeBadge
+            });
+        }
+        else
+            badges.Children.Add(Label($"{item.Modified:g} · {MediaLibraryService.FormatSize(item.Size)}", 11, MutedBrush));
+        details.Children.Add(badges);
+
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
         if (screenshot)
         {
-            var annotate = ActionButton("Annotate", primary: false);
+            var folderScreenshot = ActionIconButton("M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z", "Open folder");
+            folderScreenshot.Click += (_, _) =>
+            {
+                try { MediaLibraryService.OpenDirectory(item.Path); }
+                catch (Exception error) { ToolTip.SetTip(folderScreenshot, error.Message); }
+            };
+            actions.Children.Add(folderScreenshot);
+            var annotate = ActionIconButton("M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z", "Open in editor");
             annotate.Click += (_, _) =>
             {
                 try { new ScreenshotEditorWindow(item.Path).Show(owner); }
                 catch (Exception error) { ToolTip.SetTip(annotate, error.Message); }
             };
             actions.Children.Add(annotate);
-            var copyImage = ActionButton("Copy", primary: false);
-            ToolTip.SetTip(copyImage, "Copy image to the system clipboard");
+            var copyImage = ActionIconButton("M8 8h12v12H8z M4 16H3V4h12v1", "Copy image");
             copyImage.Click += async (_, _) =>
             {
-                try
-                {
-                    await MediaLibraryService.CopyToClipboardAsync(owner, item.Path, image: true);
-                    copyImage.Content = "Copied";
-                }
-                catch (Exception error)
-                {
-                    copyImage.Content = "Copy failed";
-                    ToolTip.SetTip(copyImage, error.Message);
-                }
+                try { await MediaLibraryService.CopyToClipboardAsync(owner, item.Path, image: true); }
+                catch (Exception error) { ToolTip.SetTip(copyImage, error.Message); }
             };
             actions.Children.Add(copyImage);
+            actions.Children.Add(ActionIconButton("M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7 M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7", "Share link unavailable"));
         }
         else
         {
-            var edit = ActionButton("Edit", primary: true);
+            var edit = ActionIconButton("M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z", "Edit");
             edit.Click += (_, _) => new VideoEditorWindow(item.Path).Show(owner);
-            var play = ActionButton("Play", primary: false);
-            play.Click += (_, _) =>
-            {
-                try { MediaLibraryService.OpenVideoAt(item.Path); }
-                catch (Exception error) { ToolTip.SetTip(play, error.Message); }
-            };
             actions.Children.Add(edit);
-            actions.Children.Add(play);
-            var copyVideo = ActionButton("Copy", primary: false);
-            ToolTip.SetTip(copyVideo, "Copy video file to the system clipboard");
-            copyVideo.Click += async (_, _) =>
+            var folder = ActionIconButton("M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z", "Open folder");
+            folder.Click += (_, _) =>
             {
-                try
-                {
-                    await MediaLibraryService.CopyToClipboardAsync(owner, item.Path, image: false);
-                    copyVideo.Content = "Copied";
-                }
-                catch (Exception error)
-                {
-                    copyVideo.Content = "Copy failed";
-                    ToolTip.SetTip(copyVideo, error.Message);
-                }
+                try { MediaLibraryService.OpenDirectory(item.Path); }
+                catch (Exception error) { ToolTip.SetTip(folder, error.Message); }
             };
-            actions.Children.Add(copyVideo);
+            actions.Children.Add(folder);
         }
-        var folder = ActionButton("Folder", primary: false);
-        folder.Click += (_, _) =>
-        {
-            try { MediaLibraryService.OpenDirectory(item.Path); }
-            catch (Exception error) { ToolTip.SetTip(folder, error.Message); }
-        };
-        actions.Children.Add(folder);
-        var delete = ActionButton("Delete", primary: false);
+        var delete = ActionIconButton("M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14 M10 10v6 M14 10v6", "Delete");
         ToolTip.SetTip(delete, "Move this file to the system Trash");
         delete.Click += async (_, _) =>
         {
@@ -285,7 +368,6 @@ internal static class SettingsPageFactory
             }
             catch (Exception error)
             {
-                delete.Content = "Could not move";
                 ToolTip.SetTip(delete, error.Message);
             }
         };
@@ -293,16 +375,16 @@ internal static class SettingsPageFactory
 
         var content = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("72,*,Auto"),
-            ColumnSpacing = 12,
-            Margin = new Thickness(12, 10)
+            ColumnDefinitions = new ColumnDefinitions("48,*,Auto"),
+            ColumnSpacing = 20,
+            Margin = new Thickness(12)
         };
 
         var preview = new Border
         {
-            Width = 64,
-            Height = 52,
-            CornerRadius = new CornerRadius(7),
+            Width = 48,
+            Height = 48,
+            CornerRadius = new CornerRadius(4),
             ClipToBounds = true,
             Background = Brush("#252525")
         };
@@ -362,103 +444,178 @@ internal static class SettingsPageFactory
         Grid.SetColumn(actions, 2);
         content.Children.Add(details);
         content.Children.Add(actions);
-        return new Border
+        var row = new Border
         {
-            Background = PanelBrush,
-            BorderBrush = PanelBorderBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
+            BorderBrush = hasSeparator ? PanelBorderBrush : Brushes.Transparent,
+            BorderThickness = hasSeparator ? new Thickness(0, 0, 0, 1) : default,
             Child = content
         };
-    }
-
-    private static Control BuildAutomationsPage(Window owner)
-    {
-        var recordingEnabled = new ToggleSwitch
+        if (!screenshot)
         {
-            Width = 38,
-            OnContent = string.Empty,
-            OffContent = string.Empty,
-            IsChecked = AppPreferencesStore.Get("automation.recordings.enabled") == "true"
-        };
-        var screenshotEnabled = new ToggleSwitch
-        {
-            Width = 38,
-            OnContent = string.Empty,
-            OffContent = string.Empty,
-            IsChecked = AppPreferencesStore.Get("automation.screenshots.enabled") == "true"
-        };
-        recordingEnabled.IsCheckedChanged += (_, _) => SaveAutomationToggle("automation.recordings.enabled", recordingEnabled.IsChecked);
-        screenshotEnabled.IsCheckedChanged += (_, _) => SaveAutomationToggle("automation.screenshots.enabled", screenshotEnabled.IsChecked);
-
-        var recordingFolder = FolderDisplay(AppPreferencesStore.Get("automation.recordings.folder"));
-        var screenshotFolder = FolderDisplay(AppPreferencesStore.Get("automation.screenshots.folder"));
-        var recordingChoose = ActionButton("Choose folder", primary: false);
-        recordingChoose.Click += async (_, _) => await ChooseAutomationFolderAsync(owner, "Choose a backup folder for recordings", recordingFolder, "automation.recordings.folder");
-        var screenshotChoose = ActionButton("Choose folder", primary: false);
-        screenshotChoose.Click += async (_, _) => await ChooseAutomationFolderAsync(owner, "Choose a backup folder for screenshots", screenshotFolder, "automation.screenshots.folder");
-
-        var recordingDestination = FolderRow(recordingFolder, recordingChoose);
-        var screenshotDestination = FolderRow(screenshotFolder, screenshotChoose);
-        return Page("Automations", "Run small local actions automatically when you save new media.",
-            Section("Recordings", "Keep a second copy of every finished local recording.",
-                Card(SettingRow("Copy recordings to another folder", "Runs after a recording is finalized.", recordingEnabled), recordingDestination)),
-            Section("Screenshots", "Keep a second copy of each screenshot you take.",
-                Card(SettingRow("Copy screenshots to another folder", "Runs after the screenshot is saved.", screenshotEnabled), screenshotDestination)),
-            Note("These automations run only on this computer. Share-link and cloud-drive rules need Cap's online services."));
-    }
-
-    private static TextBlock FolderDisplay(string? folder)
-    {
-        var display = Label(string.IsNullOrWhiteSpace(folder) ? "Choose a destination folder" : folder, 12, MutedBrush, wrap: true);
-        display.TextTrimming = TextTrimming.CharacterEllipsis;
-        return display;
-    }
-
-    private static Control FolderRow(TextBlock display, Button choose)
-    {
-        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 10, Margin = new Thickness(12, 4, 12, 10) };
-        row.Children.Add(display);
-        Grid.SetColumn(choose, 1);
-        row.Children.Add(choose);
+            var contextMenu = new ContextMenu();
+            var play = new MenuItem { Header = "Play" };
+            play.Click += (_, _) =>
+            {
+                try { MediaLibraryService.OpenVideoAt(item.Path); }
+                catch { }
+            };
+            var copy = new MenuItem { Header = "Copy video" };
+            copy.Click += async (_, _) =>
+            {
+                try { await MediaLibraryService.CopyToClipboardAsync(owner, item.Path, image: false); }
+                catch { }
+            };
+            contextMenu.Items.Add(play);
+            contextMenu.Items.Add(copy);
+            row.ContextMenu = contextMenu;
+        }
         return row;
     }
 
-    private static async Task ChooseAutomationFolderAsync(Window owner, string title, TextBlock display, string key)
+    private static Control BuildAutomationsPage()
     {
-        try
+        var emptyContent = new StackPanel
         {
-            var folder = await AutomationService.ChooseFolderAsync(owner, title);
-            if (folder is null)
-                return;
-            AppPreferencesStore.Set(key, folder);
-            display.Text = folder;
-        }
-        catch (Exception error)
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(20, 24)
+        };
+        var iconCircle = new Border
         {
-            display.Text = "Could not choose folder: " + error.Message;
-        }
-    }
+            Width = 44,
+            Height = 44,
+            CornerRadius = new CornerRadius(22),
+            Background = Brush("#292929"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Child = new Avalonia.Controls.Shapes.Path
+            {
+                Width = 20,
+                Height = 20,
+                Data = Geometry.Parse("M13 2 4 13h6l-1 9 9-12h-6l1-8z"),
+                Stroke = MutedBrush,
+                StrokeThickness = 1.8,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+        emptyContent.Children.Add(iconCircle);
+        emptyContent.Children.Add(Label("No automations yet", 13, TextBrush, weight: FontWeight.Medium,
+            align: HorizontalAlignment.Center));
+        var emptyDescription = Label("Pick a template below to get started in one click, or build your own from scratch.",
+            12, MutedBrush, wrap: true, align: HorizontalAlignment.Center);
+        emptyDescription.MaxWidth = 320;
+        emptyDescription.LineHeight = 18;
+        iconCircle.Margin = new Thickness(0, 0, 0, 5);
+        emptyContent.RenderTransform = new TranslateTransform(0, 0);
+        emptyContent.Children.Add(emptyDescription);
+        var startContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        startContent.Children.Add(new Avalonia.Controls.Shapes.Path
+        {
+            Width = 14,
+            Height = 14,
+            Data = Geometry.Parse("M12 5v14 M5 12h14"),
+            Stroke = TextBrush,
+            StrokeThickness = 2
+        });
+        startContent.Children.Add(Label("Start from scratch", 12, TextBrush));
+        var start = new Button
+        {
+            Content = startContent,
+            Height = 28,
+            Padding = new Thickness(12, 0),
+            Background = Brush("#2A2A2A"),
+            BorderBrush = Brush("#3A3A3A"),
+            BorderThickness = new Thickness(1),
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(16),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        start.HorizontalAlignment = HorizontalAlignment.Center;
+        start.Margin = new Thickness(0, 5.5, 0, 0);
+        start.Click += (_, _) => ToolTip.SetTip(start, "Custom automation rules need Cap's automation service.");
+        emptyContent.Children.Add(start);
+        var emptyCard = new Border
+        {
+            Background = CardBrush,
+            BorderBrush = PanelBorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            MinHeight = 244,
+            Margin = new Thickness(-4, 16, -4, 0),
+            Child = emptyContent
+        };
 
-    private static void SaveAutomationToggle(string key, bool? value)
-    {
-        try { AppPreferencesStore.Set(key, value == true ? "true" : "false"); }
-        catch { }
+        var templates = new (string Name, string Description, string Icon)[]
+        {
+            ("Auto-copy new screenshots to clipboard", "Snap a screenshot and it's right there, ready to paste.", "M8 8h12v12H8z M4 16H3V4h12v1"),
+            ("Pull the text out of screenshots", "Cap reads the text in your screenshot and copies it for you.", "M4 5h16 M4 9h10 M4 13h16 M4 17h10 M18 11v8 M15 14h6"),
+            ("Tuck screenshots into a folder", "Send every new screenshot straight to a folder you pick.", "M3 6h7l2 2h9v12H3z M12 11v6 M9 14l3 3 3-3"),
+            ("Jump to each new screenshot", "Pop open every screenshot in Finder the moment you take it.", "M3 6h7l2 2h9v12H3z M8 14h8 M12 10v8"),
+            ("Auto-export when you finish recording", "Render an MP4 the second a Studio recording wraps up.", "M4 5h16v14H4z M9 5v14 M15 5v14 M4 10h5 M15 10h5 M4 15h5 M15 15h5"),
+            ("Upload and grab the share link", "Finish a recording and the link is waiting on your clipboard.", "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7 M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"),
+            ("Ping me when an upload is ready", "Get a gentle desktop nudge once your recording is shareable.", "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4"),
+            ("Tell Slack when you share something", "Send the share link to Slack, Discord, or your own webhook.", "M12 8V4m0 16v-4m4-4h4M4 12h4m5.2-1.2 2.8-2.8m-5.6 5.6-2.8 2.8m5.6 0-2.8-2.8m-2.8-5.6 2.8 2.8")
+        };
+        var templateGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            ColumnSpacing = 10,
+            RowSpacing = 10,
+            Margin = new Thickness(-4, 8, -9, 0)
+        };
+        for (var index = 0; index < templates.Length; index++)
+        {
+            var template = templates[index];
+            var row = index / 2;
+            var column = index % 2;
+            if (templateGrid.RowDefinitions.Count <= row)
+                templateGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            var tile = AutomationTemplateCard(template.Name, template.Description, template.Icon);
+            tile.Click += (_, _) => ToolTip.SetTip(tile, "Automation templates need Cap's automation service.");
+            Grid.SetRow(tile, row);
+            Grid.SetColumn(tile, column);
+            templateGrid.Children.Add(tile);
+        }
+
+        var page = new StackPanel { Spacing = 0 };
+        page.Children.Add(PageHeader("Automations", "Run actions automatically when something happens in Cap. Rules are shared with the Cap CLI.",
+            descriptionMaxWidth: 1032));
+        page.Children.Add(emptyCard);
+        var templatesSection = Section("Templates", "One click to add a ready-made automation. Tweak anything afterwards.", templateGrid);
+        templateGrid.Margin = new Thickness(-4, 8, -9, 0);
+        templatesSection.Margin = new Thickness(0, 30.5, 0, 0);
+        page.Children.Add(templatesSection);
+        return page;
     }
 
     private static Control BuildTranscriptionPage()
     {
-        var input = new TextBox { PlaceholderText = "Add a name, spelling, domain, or phrase", MinHeight = 34, VerticalContentAlignment = VerticalAlignment.Center };
-        var hints = new StackPanel { Spacing = 8 };
-        var hintValues = new List<string>();
+        var input = new TextBox
+        {
+            PlaceholderText = "Add a term",
+            Height = 36,
+            MinHeight = 36,
+            FontSize = 12,
+            Padding = new Thickness(12, 0),
+            Background = Brush("#111111"),
+            BorderBrush = Brush("#242424"),
+            CornerRadius = new CornerRadius(8),
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        var hints = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var storedHints = AppPreferencesStore.Get("transcription.hints");
+        var hintValues = new List<string> { "Cap", "TypeScript", "My Brand Name", "mywebsite.com" };
         try
         {
-            hintValues = JsonSerializer.Deserialize<List<string>>(AppPreferencesStore.Get("transcription.hints") ?? "[]") ?? new();
+            if (storedHints is not null)
+                hintValues = JsonSerializer.Deserialize<List<string>>(storedHints) ?? new();
         }
         catch
         {
             hintValues = new();
         }
+        TextBlock? countLabel = null;
         void PersistHints()
         {
             try { AppPreferencesStore.Set("transcription.hints", JsonSerializer.Serialize(hintValues)); }
@@ -468,30 +625,68 @@ internal static class SettingsPageFactory
         void RefreshHints()
         {
             hints.Children.Clear();
+            if (countLabel is not null)
+                countLabel.Text = $"{hintValues.Count} {(hintValues.Count == 1 ? "item" : "items")}";
             if (hintValues.Count == 0)
             {
-                hints.Children.Add(Note("No hints added yet."));
+                hints.Children.Add(Label("No remembered terms yet.", 12, MutedBrush));
                 return;
             }
             foreach (var hint in hintValues.ToArray())
-            {
-                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 8 };
-                row.Children.Add(Chip(hint));
-                var remove = ActionButton("Remove", primary: false);
-                remove.Click += (_, _) =>
+                hints.Children.Add(TranscriptionChip(hint, () =>
                 {
                     hintValues.Remove(hint);
                     PersistHints();
                     RefreshHints();
-                };
-                Grid.SetColumn(remove, 1);
-                row.Children.Add(remove);
-                hints.Children.Add(row);
-            }
+                }));
         }
 
         RefreshHints();
-        var add = ActionButton("Add", primary: true);
+        var clear = ActionButton("Clear", primary: false);
+        clear.FontSize = 12;
+        clear.Height = 28;
+        clear.Padding = new Thickness(12, 0);
+        clear.CornerRadius = new CornerRadius(16);
+        clear.Click += (_, _) =>
+        {
+            hintValues.Clear();
+            PersistHints();
+            RefreshHints();
+        };
+
+        var rememberTitle = new StackPanel { Spacing = 8 };
+        rememberTitle.Children.Add(Label("Remembered terms", 13, TextBrush, weight: FontWeight.Medium));
+        var rememberDescription = Label("Add one term at a time to reduce typos and formatting mistakes.", 12, MutedBrush, wrap: true);
+        rememberDescription.MaxWidth = 420;
+        rememberDescription.LineHeight = 18;
+        rememberTitle.Children.Add(rememberDescription);
+        var topRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 12 };
+        topRow.Children.Add(rememberTitle);
+        Grid.SetColumn(clear, 1);
+        clear.VerticalAlignment = VerticalAlignment.Top;
+        topRow.Children.Add(clear);
+
+        var addContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+        addContent.Children.Add(new Avalonia.Controls.Shapes.Path
+        {
+            Width = 14,
+            Height = 14,
+            Data = Geometry.Parse("M12 5v14 M5 12h14"),
+            Stroke = TextBrush,
+            StrokeThickness = 1.8
+        });
+        addContent.Children.Add(Label("Add", 12, TextBrush));
+        var add = new Button
+        {
+            Content = addContent,
+            Height = 36,
+            Padding = new Thickness(12, 0),
+            Background = Brush("#2A2A2A"),
+            BorderBrush = Brush("#3A3A3A"),
+            BorderThickness = new Thickness(1),
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(18)
+        };
         add.IsEnabled = false;
         input.TextChanged += (_, _) => add.IsEnabled = !string.IsNullOrWhiteSpace(input.Text);
         add.Click += (_, _) =>
@@ -511,10 +706,57 @@ internal static class SettingsPageFactory
         Grid.SetColumn(add, 1);
         entry.Children.Add(add);
 
-        return Page("Transcription", "Keep a local list of names and spellings for reference.",
-            Section("Add a hint", null, Card(entry, Note("Transcription and caption generation are not connected in this build."))),
-            Section("Saved hints", "These hints stay on this device.",
-                Card(hints)));
+        var rememberCardContent = new StackPanel { Spacing = 16, Margin = new Thickness(16) };
+        rememberCardContent.Children.Add(topRow);
+        rememberCardContent.Children.Add(entry);
+        rememberCardContent.Children.Add(Label("These hints are applied when you generate captions in the editor.", 12, MutedBrush, wrap: true));
+        var rememberCard = Card(rememberCardContent);
+        rememberCard.MinHeight = 166;
+        rememberCard.Margin = new Thickness(-4, 0, -4, 0);
+        var activeHeader = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        activeHeader.Children.Add(Label("Active hints", 14, TextBrush, weight: FontWeight.SemiBold));
+        var count = Label($"{hintValues.Count} {(hintValues.Count == 1 ? "item" : "items")}", 12, MutedBrush);
+        countLabel = count;
+        Grid.SetColumn(count, 1);
+        activeHeader.Children.Add(count);
+        var hintsCard = Card(hints);
+        hintsCard.Margin = new Thickness(-4, 6.5, -4, 0);
+        hintsCard.Child = new Border { Padding = new Thickness(16), Child = hints };
+        var activeSection = new StackPanel { Spacing = 12 };
+        activeSection.Children.Add(activeHeader);
+        activeSection.Children.Add(hintsCard);
+        return PageWithHeader(PageHeader("Transcription", "Add names, spellings, domains, and capitalization preferences that caption generation should keep in mind."),
+            rememberCard, activeSection);
+    }
+
+    private static Control TranscriptionChip(string text, Action remove)
+    {
+        var contents = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        contents.Children.Add(Label(text, 12, TextBrush));
+        var dismiss = new Button
+        {
+            Content = "×",
+            Width = 16,
+            Height = 20,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Foreground = TextBrush,
+            FontSize = 16,
+            CornerRadius = new CornerRadius(10)
+        };
+        dismiss.Click += (_, _) => remove();
+        contents.Children.Add(dismiss);
+        return new Border
+        {
+            Padding = new Thickness(10, 3),
+            Background = Brush("#292929"),
+            BorderBrush = Brush("#3A3A3A"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(18),
+            Child = contents
+        };
     }
 
     private static Control BuildIntegrationsPage()
@@ -612,7 +854,7 @@ internal static class SettingsPageFactory
 
     private static Control Page(string title, string description, params Control[] sections)
     {
-        var content = new StackPanel { Spacing = 28 };
+        var content = new StackPanel { Spacing = 32.5 };
         content.Children.Add(PageHeader(title, description));
         foreach (var section in sections)
             content.Children.Add(section);
@@ -628,11 +870,13 @@ internal static class SettingsPageFactory
         return content;
     }
 
-    private static Control PageHeader(string title, string description, Control? action = null)
+    private static Control PageHeader(string title, string description, Control? action = null, double descriptionMaxWidth = 510)
     {
         var text = new StackPanel { Spacing = 4 };
         text.Children.Add(Label(title, 14, TextBrush, weight: FontWeight.SemiBold));
-        text.Children.Add(Label(description, 12, MutedBrush, wrap: true));
+        var descriptionLabel = Label(description, 12, MutedBrush, wrap: true);
+        descriptionLabel.MaxWidth = descriptionMaxWidth;
+        text.Children.Add(descriptionLabel);
 
         if (action is null)
             return text;
@@ -644,14 +888,19 @@ internal static class SettingsPageFactory
         return header;
     }
 
-    private static Control Section(string title, string? description, Control content)
+    private static Control Section(string title, string? description, Control content, double contentTopMargin = 6.5)
     {
         var section = new StackPanel { Spacing = 4 };
         section.Children.Add(Label(title, 14, TextBrush, weight: FontWeight.SemiBold));
         if (!string.IsNullOrWhiteSpace(description))
-            section.Children.Add(Label(description, 12, MutedBrush, wrap: true));
+        {
+            var descriptionLabel = Label(description, 12, MutedBrush, wrap: true);
+            descriptionLabel.MaxWidth = 510;
+            descriptionLabel.LineHeight = 16.5;
+            section.Children.Add(descriptionLabel);
+        }
         if (content is Border border)
-            border.Margin = new Thickness(-4, 8, -4, 0);
+            border.Margin = new Thickness(-4, contentTopMargin, -4, 0);
         else
             content.Margin = new Thickness(0, 8, 0, 0);
         section.Children.Add(content);
@@ -665,7 +914,7 @@ internal static class SettingsPageFactory
             stack.Children.Add(child);
         return new Border
         {
-            Background = PanelBrush,
+            Background = CardBrush,
             BorderBrush = PanelBorderBrush,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(12),
@@ -731,46 +980,75 @@ internal static class SettingsPageFactory
 
     private static Control ResolutionChoices()
     {
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*"), ColumnSpacing = 8, Margin = new Thickness(12, 2, 12, 10) };
-        var labels = new[] { "720p", "1080p\nPro", "1440p\nPro", "4K\nPro" };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*"), ColumnSpacing = 8, Margin = new Thickness(16, 2, 16, 4) };
+        var labels = new[] { ("720p", false), ("1080p", true), ("1440p", true), ("4K", true) };
         for (var index = 0; index < labels.Length; index++)
         {
-            var button = ActionButton(labels[index], primary: index == 0);
-            button.Height = 52;
-            button.IsEnabled = false;
-            ToolTip.SetTip(button, "Instant upload resolution is unavailable in this local-only build.");
-            Grid.SetColumn(button, index);
-            grid.Children.Add(button);
+            var tile = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            tile.Children.Add(Label(labels[index].Item1, 12, index == 0 ? TextBrush : MutedBrush, align: HorizontalAlignment.Center));
+            if (labels[index].Item2)
+                tile.Children.Add(Label("Pro", 10, MutedBrush, align: HorizontalAlignment.Center));
+            var option = new Border
+            {
+                Height = 52,
+                Background = Brush(index == 0 ? "#102F51" : "#1A1A1A"),
+                BorderBrush = Brush(index == 0 ? "#1684FF" : "#303030"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(9),
+                Child = tile
+            };
+            ToolTip.SetTip(option, "Instant resolution selection is unavailable in this local-only build.");
+            Grid.SetColumn(option, index);
+            grid.Children.Add(option);
         }
         return grid;
     }
 
     private static Control ChoiceList(string preferenceKey, params (string Label, string Badge, string Description)[] choices)
     {
-        var stack = new StackPanel { Spacing = 8, Margin = new Thickness(16) };
+        var stack = new StackPanel { Spacing = 8, Margin = new Thickness(16, 16, 16, 5), HorizontalAlignment = HorizontalAlignment.Stretch };
         var buttons = new List<Button>();
         var selectedLabel = AppPreferencesStore.Get(preferenceKey) ?? choices.FirstOrDefault().Label;
         Button? selectedButton = null;
         foreach (var choice in choices)
         {
-            var content = new StackPanel { Spacing = 4 };
+            var content = new StackPanel { Spacing = 5 };
             var heading = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             heading.Children.Add(Label(choice.Label, 13, TextBrush, weight: FontWeight.Medium));
             if (!string.IsNullOrWhiteSpace(choice.Badge))
-                heading.Children.Add(new Border { Padding = new Thickness(7, 3), Background = Brush("#103257"), CornerRadius = new CornerRadius(8), Child = Label(choice.Badge, 11, Brush("#77B9FF")) });
+                heading.Children.Add(new Border { Padding = new Thickness(6, 3), Background = Brush("#063B69"), CornerRadius = new CornerRadius(4), Child = Label(choice.Badge, 11, Brush("#79B8FF")) });
             content.Children.Add(heading);
-            content.Children.Add(Label(choice.Description, 12, MutedBrush, wrap: true));
+            var description = Label(choice.Description, 12, MutedBrush, wrap: true);
+            description.MaxWidth = 440;
+            description.LineHeight = 20;
+            content.Children.Add(description);
+            var choiceGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("16,*"), ColumnSpacing = 12, VerticalAlignment = VerticalAlignment.Top };
+            var radio = new Border
+            {
+                Width = 16,
+                Height = 16,
+                BorderThickness = new Thickness(1),
+                BorderBrush = Brush("#555555"),
+                CornerRadius = new CornerRadius(8),
+                Margin = new Thickness(0, 2, 0, 0),
+                Child = new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = Brushes.Transparent }
+            };
+            choiceGrid.Children.Add(radio);
+            Grid.SetColumn(content, 1);
+            choiceGrid.Children.Add(content);
             var button = new Button
             {
-                Content = content,
-                Padding = new Thickness(14, 12),
+                Content = choiceGrid,
+                Padding = new Thickness(12, 13),
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
                 Background = PanelBrush,
                 BorderBrush = PanelBorderBrush,
                 BorderThickness = new Thickness(1),
                 Foreground = TextBrush,
                 CornerRadius = new CornerRadius(10),
-                MinHeight = 66
+                MinHeight = 73,
+                Tag = radio
             };
             buttons.Add(button);
             stack.Children.Add(button);
@@ -778,13 +1056,29 @@ internal static class SettingsPageFactory
                 selectedButton = button;
             button.Click += (_, _) =>
             {
-                SelectChoice(buttons, button);
+                SetQualityChoice(buttons, button);
                 try { AppPreferencesStore.Set(preferenceKey, choice.Label); }
                 catch { }
             };
         }
-        SelectChoice(buttons, selectedButton ?? buttons[0]);
+        SetQualityChoice(buttons, selectedButton ?? buttons[0]);
         return stack;
+    }
+
+    private static void SetQualityChoice(IEnumerable<Button> buttons, Button selected)
+    {
+        foreach (var button in buttons)
+        {
+            var active = ReferenceEquals(button, selected);
+            button.Background = Brush(active ? "#102F51" : "#1A1A1A");
+            button.BorderBrush = Brush(active ? "#1684FF" : "#303030");
+            if (button.Tag is Border radio)
+            {
+                radio.BorderBrush = Brush(active ? "#1684FF" : "#555555");
+                if (radio.Child is Border dot)
+                    dot.Background = active ? Brush("#1684FF") : Brushes.Transparent;
+            }
+        }
     }
 
     private static Control ChoicePills(params string[] labels)
@@ -816,14 +1110,30 @@ internal static class SettingsPageFactory
         }
     }
 
+    private static void SelectLibraryFilter(IEnumerable<Button> buttons, Button selected)
+    {
+        foreach (var button in buttons)
+        {
+            var active = ReferenceEquals(button, selected);
+            button.Background = Brush(active ? "#252525" : "#1A1A1A");
+            button.BorderBrush = Brush(active ? "#303030" : "#252525");
+        }
+    }
+
     private static Control ShortcutRow(string name, string key, string defaultValue)
     {
-        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), MinHeight = 56, Margin = new Thickness(16, 4) };
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), MinHeight = 48.4, Margin = new Thickness(16, 4, 16, 4) };
         row.Children.Add(Label(name, 13, TextBrush, wrap: true));
         var value = AppPreferencesStore.Get("shortcut." + key) ?? defaultValue;
         var button = ActionButton(FormatShortcut(value), primary: false);
+        button.FontSize = 11;
+        button.Foreground = MutedBrush;
+        button.Background = Brush("#303030");
+        button.BorderBrush = Brush("#3A3A3A");
         button.MinWidth = 52;
-        button.Height = 28;
+        button.Height = 26;
+        button.Padding = new Thickness(8, 0);
+        button.CornerRadius = new CornerRadius(8);
         button.Focusable = true;
         var listening = false;
         button.Click += (_, _) =>
@@ -923,17 +1233,193 @@ internal static class SettingsPageFactory
         return row;
     }
 
+    private static Control CliPathRow(string label, string value)
+    {
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("64,Auto,*"), ColumnSpacing = 12 };
+        row.Children.Add(Label(label, 12, MutedBrush, VerticalAlignment.Center));
+        var path = new Border
+        {
+            Padding = new Thickness(8, 5),
+            Background = Brush("#292929"),
+            CornerRadius = new CornerRadius(7),
+            MaxWidth = 314,
+            MinWidth = label == "Command" ? 212 : 0,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = new TextBlock
+            {
+                Text = value,
+                FontFamily = "monospace",
+                FontSize = 11,
+                Foreground = TextBrush,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            }
+        };
+        Grid.SetColumn(path, 1);
+        row.Children.Add(path);
+        return row;
+    }
+
+    private static Button AutomationTemplateCard(string title, string description, string iconPath)
+    {
+        var icon = new Border
+        {
+            Width = 36,
+            Height = 36,
+            CornerRadius = new CornerRadius(8),
+            Background = Brush("#252525"),
+            Child = new Avalonia.Controls.Shapes.Path
+            {
+                Width = 18,
+                Height = 18,
+                Data = Geometry.Parse(iconPath),
+                Stroke = MutedBrush,
+                StrokeThickness = 1.8,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+        var text = new StackPanel { Spacing = 2 };
+        text.Children.Add(Label(title, 13, TextBrush, wrap: true, weight: FontWeight.Medium, verticalAlignment: VerticalAlignment.Top));
+        text.Children.Add(Label(description, 11, MutedBrush, wrap: true, verticalAlignment: VerticalAlignment.Top));
+        var content = new Grid { ColumnDefinitions = new ColumnDefinitions("36,*"), ColumnSpacing = 12, VerticalAlignment = VerticalAlignment.Top };
+        content.Children.Add(icon);
+        Grid.SetColumn(text, 1);
+        content.Children.Add(text);
+        return new Button
+        {
+            Content = content,
+            Padding = new Thickness(12),
+            MinHeight = 98,
+            Background = CardBrush,
+            BorderBrush = PanelBorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Top
+        };
+    }
+
     private static Control SearchBox(string watermark) => new TextBox
     {
-        PlaceholderText = watermark,
+        PlaceholderText = "Search",
+        Height = 36,
         MinHeight = 36,
         Width = 260,
+        HorizontalAlignment = HorizontalAlignment.Left,
         Background = Brush("#222222"),
         BorderBrush = PanelBorderBrush,
         Foreground = TextBrush,
         CornerRadius = new CornerRadius(9),
-        Margin = new Thickness(0, 4)
+        Padding = new Thickness(24, 0, 8, 0),
+        Margin = new Thickness(0, 0, 0, 0)
     };
+
+    private static Control SearchField(TextBox input)
+    {
+        var field = new Grid { Width = 260, Height = 36, HorizontalAlignment = HorizontalAlignment.Left };
+        field.Children.Add(input);
+        field.Children.Add(new Avalonia.Controls.Shapes.Path
+        {
+            Width = 12,
+            Height = 12,
+            Data = Geometry.Parse("M11 11 20 20 M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"),
+            Stroke = MutedBrush,
+            StrokeThickness = 1.8,
+            StrokeLineCap = PenLineCap.Round,
+            Margin = new Thickness(8, 0, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false
+        });
+        return field;
+    }
+
+    private static Button ActionIconButton(string pathData, string tooltip)
+    {
+        var icon = new Avalonia.Controls.Shapes.Path
+        {
+            Width = 16,
+            Height = 16,
+            Data = Geometry.Parse(pathData),
+            Stroke = MutedBrush,
+            StrokeThickness = 1.8,
+            StrokeLineCap = PenLineCap.Round,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var button = new Button
+        {
+            Content = icon,
+            Width = 36,
+            Height = 36,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(18),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(button, tooltip);
+        return button;
+    }
+
+    private static Button ImportButton(string text)
+    {
+        var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        content.Children.Add(new Avalonia.Controls.Shapes.Path
+        {
+            Width = 16,
+            Height = 16,
+            Data = Geometry.Parse("M12 3v10 M8 10l4 4 4-4 M5 14v5h14v-5"),
+            Stroke = TextBrush,
+            StrokeThickness = 1.8,
+            StrokeLineCap = PenLineCap.Round,
+        });
+        content.Children.Add(Label(text, 12, TextBrush));
+        return new Button
+        {
+            Content = content,
+            Height = 36,
+            Padding = new Thickness(10.25, 0),
+            Background = Brush("#2A2A2A"),
+            BorderBrush = Brush("#3A3A3A"),
+            BorderThickness = new Thickness(1),
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(18),
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+    }
+
+    private static Button FilterButton(string label)
+    {
+        var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+        if (label == "Instant")
+            content.Children.Add(new Avalonia.Controls.Shapes.Path { Width = 12, Height = 12, Data = Geometry.Parse("M13 2 4 13h6l-1 9 9-12h-6l1-8z"), Fill = TextBrush });
+        else if (label == "Studio")
+            content.Children.Add(new Avalonia.Controls.Shapes.Path
+            {
+                Width = 14,
+                Height = 12,
+                Data = Geometry.Parse("M3 7h18v13H3z M3 7l2-4 4 2 2-3 4 2 3-2 3 5 M7 10v2 M12 10v2 M17 10v2"),
+                Stroke = TextBrush,
+                StrokeThickness = 1.5,
+                StrokeLineCap = PenLineCap.Round,
+            });
+        content.Children.Add(Label(label, 12, TextBrush));
+        return new Button
+        {
+            Content = content,
+            Height = 33,
+            Padding = new Thickness(12, 0),
+            Background = Brush("#1A1A1A"),
+            BorderBrush = Brush("#2D2D2D"),
+            BorderThickness = new Thickness(1),
+            Foreground = TextBrush,
+            CornerRadius = new CornerRadius(18),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+    }
 
     private static Control EmptyState(string title, string description, string? actionLabel, Action<Button>? onAction = null)
     {
@@ -1041,6 +1527,17 @@ internal static class SettingsPageFactory
             CornerRadius = new CornerRadius(18),
             HorizontalAlignment = HorizontalAlignment.Right
         };
+    }
+
+    private static Button CreateUnavailablePlansButton()
+    {
+        var button = ActionButton("View plans ↗", primary: false);
+        button.IsEnabled = false;
+        button.Margin = new Thickness(12, 0, 0, 12);
+        button.Height = 30;
+        button.HorizontalAlignment = HorizontalAlignment.Left;
+        ToolTip.SetTip(button, "Cap plans are unavailable in this local-only build.");
+        return button;
     }
 
     private static Control Chip(string text) => new Border

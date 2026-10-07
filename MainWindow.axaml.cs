@@ -157,7 +157,7 @@ public partial class MainWindow : Window
             var pathWhenStopped = await session.StopAsync();
             _recordingSession = null;
             try { AppPreferencesStore.Set("recording.mode." + pathWhenStopped, _selectedMode); } catch { }
-            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F0F0F0"));
+            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F04444"));
             ToolTip.SetTip(RecordButton, "Start recording");
             var backupPath = await ApplySaveAutomationAsync(pathWhenStopped, screenshot: false);
             ShowStatus($"Recording saved: {Path.GetFileName(pathWhenStopped)}{backupPath}");
@@ -181,7 +181,7 @@ public partial class MainWindow : Window
         catch (Exception error)
         {
             _recordingSession = null;
-            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F0F0F0"));
+            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F04444"));
             _recordingOverlayWindow?.Close();
             _recordingOverlayWindow = null;
             RestoreRecorderWindow();
@@ -400,9 +400,9 @@ public partial class MainWindow : Window
         var cameraName = AppPreferencesStore.Get("capture.camera.name");
         var microphoneName = AppPreferencesStore.Get("capture.microphone.name");
         var systemAudioName = AppPreferencesStore.Get("capture.systemaudio.name");
-        CameraDeviceButton.Content = string.IsNullOrWhiteSpace(cameraName) ? "Choose Camera" : cameraName;
-        MicrophoneDeviceButton.Content = string.IsNullOrWhiteSpace(microphoneName) ? "Choose Microphone" : microphoneName;
-        SystemAudioDeviceButton.Content = string.IsNullOrWhiteSpace(systemAudioName) ? "Choose Loopback" : systemAudioName;
+        CameraDeviceButton.Content = string.IsNullOrWhiteSpace(cameraName) ? "No Camera" : cameraName;
+        MicrophoneDeviceButton.Content = string.IsNullOrWhiteSpace(microphoneName) ? "No Microphone" : microphoneName;
+        SystemAudioDeviceButton.Content = _systemAudioEnabled ? "Record System Audio" : "No System Audio";
         ToolTip.SetTip(CameraDeviceButton, cameraName ?? "Choose a camera");
         ToolTip.SetTip(MicrophoneDeviceButton, microphoneName ?? "Choose a microphone");
         ToolTip.SetTip(SystemAudioDeviceButton, systemAudioName ?? "Choose a system audio loopback device");
