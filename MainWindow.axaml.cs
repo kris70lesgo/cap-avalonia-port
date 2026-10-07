@@ -37,6 +37,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Opened += (_, _) => MacTitlebarButtonOffset.Apply(this);
         var savedMode = AppPreferencesStore.Get("recorder.mode");
         _selectedMode = savedMode is "Instant" or "Studio" or "Screenshot" ? savedMode : "Studio";
         _screenOrdinal = int.TryParse(AppPreferencesStore.Get("capture.display.ordinal"), out var displayOrdinal) ? Math.Max(0, displayOrdinal) : 0;

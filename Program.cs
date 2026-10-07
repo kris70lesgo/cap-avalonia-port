@@ -18,6 +18,7 @@ internal class Program
         builder = builder.WithDeveloperTools();
 #endif
         return builder
+            .ConfigureFonts(fontManager => fontManager.AddFontCollection(new GeistFontCollection()))
             .WithInterFont()
             .LogToTrace();
     }

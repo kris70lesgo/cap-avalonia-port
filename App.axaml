@@ -4,5 +4,21 @@
              RequestedThemeVariant="Dark">
   <Application.Styles>
     <FluentTheme />
+    <Style Selector="Window">
+      <Setter Property="FontFamily" Value="fonts:Cap#Geist" />
+      <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+    <Style Selector="TextBlock">
+      <Setter Property="FontFamily" Value="fonts:Cap#Geist" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="FontFamily" Value="fonts:Cap#Geist" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="FontFamily" Value="fonts:Cap#Geist" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="FontFamily" Value="fonts:Cap#Geist" />
+    </Style>
   </Application.Styles>
 </Application>

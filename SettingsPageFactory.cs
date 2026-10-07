@@ -15,7 +15,7 @@ internal static class SettingsPageFactory
 {
     private static readonly IBrush PanelBrush = Brush("#1A1A1A");
     private static readonly IBrush CardBrush = Brush("#1C1C1C");
-    private static readonly IBrush PanelBorderBrush = Brush("#2D2D2D");
+    private static readonly IBrush PanelBorderBrush = Brush("#282828");
     private static readonly IBrush TextBrush = Brush("#F1F1F1");
     private static readonly IBrush MutedBrush = Brush("#A1A1A1");
 
@@ -44,10 +44,27 @@ internal static class SettingsPageFactory
             ("Maximum detail", "", "Preserves more detail for demanding edits. Creates larger files and needs more disk space."));
 
         var instantChoices = ResolutionChoices();
-        var shareRows = Card(DisabledToggleRow("Open share links automatically", "Open the link in your browser when an upload finishes."));
+        var shareLinksEnabled = bool.TryParse(AppPreferencesStore.Get("quality.autoOpenShareLinks"), out var savedShareLinks)
+            ? savedShareLinks
+            : true;
+        var shareLinksToggle = new ToggleSwitch
+        {
+            IsChecked = shareLinksEnabled,
+            Width = 38,
+            OnContent = string.Empty,
+            OffContent = string.Empty,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(12, 0, 0, 0)
+        };
+        shareLinksToggle.IsCheckedChanged += (_, _) =>
+        {
+            try { AppPreferencesStore.Set("quality.autoOpenShareLinks", shareLinksToggle.IsChecked?.ToString() ?? "false"); }
+            catch { }
+        };
+        var shareRows = Card(SettingRow("Open share links automatically", "Open the link in your browser when an upload finishes.", shareLinksToggle, 62));
         var studioSection = Section("Studio", "Saved to your computer, ready to edit. All three quality options are available on every plan.",
             Card(studioChoices,
-                Label("These options affect the original recording. Choose your final export resolution and file size in the editor.", 12, MutedBrush, wrap: true, margin: new Thickness(12, 8, 12, 19)),
+                Label("These options affect the original recording. Choose your final export resolution and file size in the editor.", 12, MutedBrush, wrap: true, margin: new Thickness(16, 8, 16, 19)),
                 new Border { Height = 2.5 }), contentTopMargin: 9.5);
         studioSection.Margin = new Thickness(0, 0, 0, -3);
 
@@ -135,6 +152,9 @@ internal static class SettingsPageFactory
         var header = PageHeader(title, "Manage your " + title.ToLowerInvariant() + " and perform actions.", import);
         var search = (TextBox)SearchBox(screenshots ? "Search screenshots" : "Search recordings");
         var itemsPanel = new StackPanel { Spacing = 0 };
+        var emptyState = Label(screenshots ? "No screenshots found" : "No recordings found", 14,
+            Brush("#B0B0B0"), align: HorizontalAlignment.Center,
+            margin: new Thickness(0, 11.5, 0, 0));
         var currentFilter = "Show all";
         var visibleCount = 20;
         var loadMore = ActionButton("Load more", primary: false);
@@ -172,15 +192,13 @@ internal static class SettingsPageFactory
         controls.Children.Add(SearchField(search));
         controls.Children.Add(new Border { Height = 1, Background = Brush("#303030"), Margin = new Thickness(0, 12, 0, 0) });
 
-        var emptyState = Label(screenshots ? "No screenshots found" : "No recordings found", 14, TextBrush,
-            align: HorizontalAlignment.Center, margin: new Thickness(0, 0, 0, 0));
         var libraryView = new StackPanel { Spacing = 0 };
         libraryView.Children.Add(controls);
         libraryView.Children.Add(itemsCard);
         var page = new StackPanel { Spacing = 0 };
         page.Children.Add(header);
-        page.Children.Add(emptyState);
         page.Children.Add(libraryView);
+        page.Children.Add(emptyState);
 
         loadMore.Click += (_, _) =>
         {
@@ -199,8 +217,8 @@ internal static class SettingsPageFactory
 
             controls.IsVisible = sourceItems.Length > 0;
             itemsCard.IsVisible = sourceItems.Length > 0;
-            emptyState.IsVisible = sourceItems.Length == 0;
             libraryView.IsVisible = sourceItems.Length > 0;
+            emptyState.IsVisible = sourceItems.Length == 0;
 
             if (filteredItems.Length == 0)
             {
@@ -213,7 +231,7 @@ internal static class SettingsPageFactory
                     : !string.IsNullOrWhiteSpace(search.Text)
                         ? "No matching " + title.ToLowerInvariant() + "."
                         : "No " + title.ToLowerInvariant() + " found";
-                itemsPanel.Children.Add(Label(label, 12, MutedBrush, align: HorizontalAlignment.Center,
+                itemsPanel.Children.Add(Label(label, 12, screenshots ? Brush("#111111") : MutedBrush, align: HorizontalAlignment.Center,
                     margin: new Thickness(12, 34)));
                 return;
             }
@@ -266,7 +284,6 @@ internal static class SettingsPageFactory
             RefreshItems();
         };
         RefreshItems();
-        emptyState.Margin = new Thickness(0, 12, 0, 0);
         return page;
     }
 
@@ -486,15 +503,17 @@ internal static class SettingsPageFactory
             Width = 44,
             Height = 44,
             CornerRadius = new CornerRadius(22),
-            Background = Brush("#292929"),
+            Background = Brush("#282828"),
             HorizontalAlignment = HorizontalAlignment.Center,
             Child = new Avalonia.Controls.Shapes.Path
             {
                 Width = 20,
                 Height = 20,
-                Data = Geometry.Parse("M13 2 4 13h6l-1 9 9-12h-6l1-8z"),
+                Data = Geometry.Parse("M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"),
                 Stroke = MutedBrush,
-                StrokeThickness = 1.8,
+                StrokeThickness = 2,
+                StrokeLineCap = PenLineCap.Round,
+                StrokeJoin = PenLineJoin.Round,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             }
@@ -503,7 +522,7 @@ internal static class SettingsPageFactory
         emptyContent.Children.Add(Label("No automations yet", 13, TextBrush, weight: FontWeight.Medium,
             align: HorizontalAlignment.Center));
         var emptyDescription = Label("Pick a template below to get started in one click, or build your own from scratch.",
-            12, MutedBrush, wrap: true, align: HorizontalAlignment.Center);
+            12, MutedBrush, wrap: true, align: HorizontalAlignment.Center, weight: FontWeight.Medium);
         emptyDescription.MaxWidth = 320;
         emptyDescription.LineHeight = 18;
         iconCircle.Margin = new Thickness(0, 0, 0, 5);
@@ -516,7 +535,9 @@ internal static class SettingsPageFactory
             Height = 14,
             Data = Geometry.Parse("M12 5v14 M5 12h14"),
             Stroke = TextBrush,
-            StrokeThickness = 2
+            StrokeThickness = 2,
+            StrokeLineCap = PenLineCap.Round,
+            StrokeJoin = PenLineJoin.Round
         });
         startContent.Children.Add(Label("Start from scratch", 12, TextBrush));
         var start = new Button
@@ -548,14 +569,14 @@ internal static class SettingsPageFactory
 
         var templates = new (string Name, string Description, string Icon)[]
         {
-            ("Auto-copy new screenshots to clipboard", "Snap a screenshot and it's right there, ready to paste.", "M8 8h12v12H8z M4 16H3V4h12v1"),
-            ("Pull the text out of screenshots", "Cap reads the text in your screenshot and copies it for you.", "M4 5h16 M4 9h10 M4 13h16 M4 17h10 M18 11v8 M15 14h6"),
-            ("Tuck screenshots into a folder", "Send every new screenshot straight to a folder you pick.", "M3 6h7l2 2h9v12H3z M12 11v6 M9 14l3 3 3-3"),
-            ("Jump to each new screenshot", "Pop open every screenshot in Finder the moment you take it.", "M3 6h7l2 2h9v12H3z M8 14h8 M12 10v8"),
-            ("Auto-export when you finish recording", "Render an MP4 the second a Studio recording wraps up.", "M4 5h16v14H4z M9 5v14 M15 5v14 M4 10h5 M15 10h5 M4 15h5 M15 15h5"),
-            ("Upload and grab the share link", "Finish a recording and the link is waiting on your clipboard.", "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7 M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"),
-            ("Ping me when an upload is ready", "Get a gentle desktop nudge once your recording is shareable.", "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4"),
-            ("Tell Slack when you share something", "Send the share link to Slack, Discord, or your own webhook.", "M12 8V4m0 16v-4m4-4h4M4 12h4m5.2-1.2 2.8-2.8m-5.6 5.6-2.8 2.8m5.6 0-2.8-2.8m-2.8-5.6 2.8 2.8")
+            ("Auto-copy new screenshots to clipboard", "Snap a screenshot and it's right there, ready to paste.", "M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z M6 16c-1.1 0-2-.9-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"),
+            ("Pull the text out of screenshots", "Cap reads the text in your screenshot and copies it for you.", "M3 7V5a2 2 0 0 1 2-2h2 M17 3h2a2 2 0 0 1 2 2v2 M21 17v2a2 2 0 0 1-2 2h-2 M7 21H5a2 2 0 0 1-2-2v-2 M7 8h8 M7 12h10 M7 16h6"),
+            ("Tuck screenshots into a folder", "Send every new screenshot straight to a folder you pick.", "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z M12 10v6 M15 13l-3 3-3-3"),
+            ("Jump to each new screenshot", "Pop open every screenshot in Finder the moment you take it.", "M6 14l1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"),
+            ("Auto-export when you finish recording", "Render an MP4 the second a Studio recording wraps up.", "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z M7 3v18 M17 3v18 M3 7.5h4 M3 12h18 M3 16.5h4 M17 7.5h4 M17 16.5h4"),
+            ("Upload and grab the share link", "Finish a recording and the link is waiting on your clipboard.", "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"),
+            ("Ping me when an upload is ready", "Get a gentle desktop nudge once your recording is shareable.", "M10.268 21a2 2 0 0 0 3.464 0 M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"),
+            ("Tell Slack when you share something", "Send the share link to Slack, Discord, or your own webhook.", "M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2 M6 17l3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06 M12 6l3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8")
         };
         var templateGrid = new Grid
         {
@@ -580,11 +601,11 @@ internal static class SettingsPageFactory
 
         var page = new StackPanel { Spacing = 0 };
         page.Children.Add(PageHeader("Automations", "Run actions automatically when something happens in Cap. Rules are shared with the Cap CLI.",
-            descriptionMaxWidth: 1032));
+            descriptionMaxWidth: 1032, descriptionWeight: FontWeight.Medium));
         page.Children.Add(emptyCard);
         var templatesSection = Section("Templates", "One click to add a ready-made automation. Tweak anything afterwards.", templateGrid);
         templateGrid.Margin = new Thickness(-4, 8, -9, 0);
-        templatesSection.Margin = new Thickness(0, 30.5, 0, 0);
+        templatesSection.Margin = new Thickness(0, 29.5, 0, 0);
         page.Children.Add(templatesSection);
         return page;
     }
@@ -761,77 +782,298 @@ internal static class SettingsPageFactory
 
     private static Control BuildIntegrationsPage()
     {
-        var google = IntegrationCard("Google Drive", "Automatically save finished recordings to Google Drive.", "Connect Google Drive");
-        var s3 = IntegrationCard("Custom S3 storage", "Store uploads in an S3-compatible bucket you control.", "Configure storage");
-        return Page("Integrations", "Third-party connections are not available in this local Avalonia build.",
-            google, s3,
-            Note("No credentials or files are sent to these services from this app."));
+        var integrations = new StackPanel { Spacing = 12 };
+        integrations.Children.Add(IntegrationCard(
+            "Google Drive",
+            "Connect Google Drive for new shareable link uploads. Cap stores new videos in a private Cap folder in your Drive and continues serving them through Cap after normal access checks.",
+            "Upgrade to Pro"));
+        integrations.Children.Add(IntegrationCard(
+            "S3 Config",
+            "Connect your own S3 bucket for complete control over your data storage. All new shareable link uploads will be automatically uploaded to your configured S3 bucket, ensuring you maintain complete ownership and control over your content. Perfect for organizations requiring data sovereignty and custom storage policies.",
+            "Upgrade to Pro"));
+        return Section("Integrations", "Configure integrations to extend Cap's functionality and connect with third-party services.", integrations);
     }
 
     private static Control BuildLicensePage()
     {
-        var key = new TextBox { PlaceholderText = "Enter your license key", MinHeight = 34, VerticalContentAlignment = VerticalAlignment.Center };
-        key.IsEnabled = false;
-        var activate = ActionButton("Activate", primary: true);
-        activate.IsEnabled = false;
-        var keyRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 8 };
-        keyRow.Children.Add(key);
-        Grid.SetColumn(activate, 1);
-        keyRow.Children.Add(activate);
+        var planContent = new StackPanel { Spacing = 12, Margin = new Thickness(16) };
+        planContent.Children.Add(Label("Cap Free", 18, TextBrush, weight: FontWeight.SemiBold));
+        planContent.Children.Add(Label("Record and edit locally for personal use. Choose a paid plan for commercial use or more cloud features.",
+            12, MutedBrush, wrap: true));
+        var checking = ActionButton("Refresh plan", primary: false);
+        checking.Height = 28;
+        checking.HorizontalAlignment = HorizontalAlignment.Left;
+        checking.Click += (_, _) => ToolTip.SetTip(checking, "Plan refresh is not connected in this Avalonia build.");
+        planContent.Children.Add(checking);
+        var planCard = Card(planContent);
+        planCard.MinHeight = 144;
 
-        return Page("Plan & license", "Cap account, plan, and license services are not connected in this Avalonia build.",
-            Section("Your plan", null, Card(
-                SettingRow("Local workspace", "Record and edit media saved on this device.", ExternalAction("View Cap plans", "https://cap.so/pricing", primary: true), 72),
-                Separator(),
-                SettingRow("Desktop license", "License activation needs Cap's account service.", null, 68),
-                keyRow,
-                Note("License activation is not connected to Cap's account service in this build."))),
-            Section("Explore plans", "Open Cap's website to view its current plans and features.",
-                Card(ExternalAction("Explore plans", "https://cap.so/pricing", primary: false))));
+        var planDetails = new StackPanel { Spacing = 12, Margin = new Thickness(16) };
+        var desktopLicense = Label("", 12, MutedBrush);
+        desktopLicense.Inlines!.Add(new Avalonia.Controls.Documents.Run("Desktop License") { Foreground = TextBrush, FontWeight = FontWeight.Medium });
+        desktopLicense.Inlines!.Add(new Avalonia.Controls.Documents.Run("  ·  Commercial use of the desktop recorder and editor."));
+        var proPlan = Label("", 12, MutedBrush);
+        proPlan.Inlines!.Add(new Avalonia.Controls.Documents.Run("Cap Pro") { Foreground = TextBrush, FontWeight = FontWeight.Medium });
+        proPlan.Inlines!.Add(new Avalonia.Controls.Documents.Run("  ·  A desktop license, plus cloud sharing, AI features and collaboration."));
+        planDetails.Children.Add(desktopLicense);
+        planDetails.Children.Add(proPlan);
+        var plansButton = ExternalAction("View plans & pricing ↗", "https://cap.so/pricing", primary: true);
+        plansButton.Height = 28;
+        plansButton.HorizontalAlignment = HorizontalAlignment.Left;
+        planDetails.Children.Add(plansButton);
+        planDetails.Children.Add(Label("Opens cap.so/pricing in your browser.", 12, MutedBrush));
+        var planOptions = Card(planDetails);
+        planOptions.MinHeight = 155;
+
+        var licenseKey = new TextBox
+        {
+            PlaceholderText = "License key",
+            Height = 36,
+            MinHeight = 36,
+            Padding = new Thickness(12, 0),
+            Background = Brush("#242424"),
+            BorderBrush = Brush("#383838"),
+            CornerRadius = new CornerRadius(8),
+            FontWeight = FontWeight.Normal,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        var activate = ActionButton("Activate License", primary: false);
+        activate.IsEnabled = false;
+        activate.HorizontalAlignment = HorizontalAlignment.Center;
+        activate.MinWidth = 126;
+        var licenseContent = new StackPanel { Spacing = 10.75, Margin = new Thickness(24) };
+        licenseContent.Children.Add(Label("Have a license key?", 20, TextBrush, align: HorizontalAlignment.Center,
+            weight: FontWeight.Medium));
+        licenseContent.Children.Add(licenseKey);
+        activate.Margin = new Thickness(0, 18, 0, 0);
+        licenseContent.Children.Add(activate);
+        var licenseCard = Card(licenseContent);
+        licenseCard.MinHeight = 186;
+
+        var yourPlan = Section("Your plan", null, planCard);
+        yourPlan.Margin = new Thickness(0, 0, 0, -3);
+        var explorePlans = Section("Explore plans", "Compare current pricing and everything included on our website.", planOptions);
+        explorePlans.Margin = new Thickness(0, 0, 0, -3);
+
+        return Page("Plan & license", "Your Cap plan and desktop license, in one place.",
+            yourPlan,
+            explorePlans,
+            licenseCard);
     }
 
     private static Control BuildExperimentalPage()
     {
-        return Page("Experimental", "Preview features from Cap's native desktop build.",
-            Section("Preview", null, Card(DisabledToggleRow("Native camera preview", "Native GPU preview is not available in the Avalonia port."))),
-            Section("Reliability", null, Card(DisabledToggleRow("Out-of-process muxer", "The isolated muxer service is not part of this Avalonia build."))),
-            Section("Native app", null, Card(DisabledToggleRow("Cap GPUI", "Cap's native renderer is not part of this Avalonia build."))),
-            Note("These preview switches are unavailable in the Avalonia port."));
+        var content = new StackPanel { Spacing = 28 };
+        content.Children.Add(Section("Preview", null, Card(DisabledToggleRow(
+            "Native camera preview",
+            "Render the camera preview using a native GPU surface instead of through the webview. Experimental and off by default."))));
+        content.Children.Add(Section("Reliability", null, Card(DisabledToggleRow(
+            "Out-of-process muxer",
+            "Run the fragmented-MP4 muxer in an isolated subprocess so muxer crashes can't take down your recording. Requires the bundled cap-muxer binary."))));
+        content.Children.Add(Section("Native app", null, Card(DisabledToggleRow(
+            "Cap GPUI",
+            "Close this app and reopen the experimental fully-native version of Cap. It is unfinished, so expect missing features. Your recordings and settings are shared, and you can switch back from its Experimental settings."))));
+        return content;
     }
 
     private static Control BuildFeedbackPage()
     {
-        var category = Select(new[] { "General feedback", "Report a bug", "Request a feature" }, 0);
-        var message = new TextBox { PlaceholderText = "Tell us what happened or what you would like to see…", AcceptsReturn = true, MinHeight = 110, TextWrapping = TextWrapping.Wrap, VerticalContentAlignment = VerticalAlignment.Top };
-        var submit = ActionButton("Save feedback locally", primary: true);
-        submit.IsEnabled = false;
-        message.TextChanged += (_, _) => submit.IsEnabled = !string.IsNullOrWhiteSpace(message.Text);
-        submit.Click += (_, _) =>
+        var message = new TextBox
         {
-            try
-            {
-                var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CapAvalonia", "Feedback");
-                Directory.CreateDirectory(directory);
-                var categoryText = GetComboItemText(category.SelectedItem) ?? "General feedback";
-                var file = Path.Combine(directory, $"Feedback_{DateTime.Now:yyyyMMdd_HHmmss_fff}.txt");
-                File.WriteAllText(file, $"{categoryText}{Environment.NewLine}{DateTime.Now:g}{Environment.NewLine}{Environment.NewLine}{message.Text}");
-                submit.Content = "Saved locally";
-                submit.IsEnabled = false;
-            }
-            catch (Exception error)
-            {
-                submit.Content = "Save failed";
-                ToolTip.SetTip(submit, error.Message);
-            }
+            PlaceholderText = "Tell us what you think about Cap...",
+            AcceptsReturn = true,
+            Height = 128,
+            MinHeight = 128,
+            FontSize = 13,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalContentAlignment = VerticalAlignment.Top,
+            Padding = new Thickness(8, 10),
+            Background = Brush("#1A1A1A"),
+            BorderBrush = Brush("#303030"),
+            CornerRadius = new CornerRadius(6),
+            Margin = new Thickness(-4, 0, -6.5, 0)
+        };
+        var submit = ActionButton("Submit Feedback", primary: false);
+        submit.IsEnabled = false;
+        submit.HorizontalAlignment = HorizontalAlignment.Left;
+        submit.Classes.Add("action");
+        submit.FontSize = 13;
+        submit.Height = 38;
+        submit.Padding = new Thickness(12, 0);
+        submit.Background = Brush("#1C1C1C");
+        submit.BorderBrush = Brush("#303030");
+        submit.Foreground = Brush("#777777");
+        submit.Opacity = 1;
+        ToolTip.SetTip(submit, "Online feedback is not connected in this Avalonia build.");
+        var submitFace = new Border
+        {
+            Background = Brush("#1C1C1C"),
+            BorderBrush = Brush("#303030"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(22),
+            Child = Label("Submit Feedback", 13, Brush("#777777"), align: HorizontalAlignment.Center)
+        };
+        var submitButtonHost = new Grid { Width = 134, Height = 38, HorizontalAlignment = HorizontalAlignment.Left };
+        submitButtonHost.Margin = new Thickness(-4, 0, 0, 0);
+        submitButtonHost.Children.Add(submitFace);
+        submit.Width = 134;
+        submit.Height = 38;
+        submit.Opacity = 0;
+        submit.HorizontalAlignment = HorizontalAlignment.Stretch;
+        submit.VerticalAlignment = VerticalAlignment.Stretch;
+        submitButtonHost.Children.Add(submit);
+        message.TextChanged += (_, _) =>
+        {
+            var enabled = (message.Text?.Trim().Length ?? 0) >= 4;
+            submit.IsEnabled = enabled;
+            submitFace.Background = Brush(enabled ? "#2A2A2A" : "#1C1C1C");
+            submitFace.BorderBrush = Brush(enabled ? "#3A3A3A" : "#303030");
+            if (submitFace.Child is TextBlock text)
+                text.Foreground = enabled ? TextBrush : Brush("#777777");
+        };
+        var feedbackForm = new StackPanel { Spacing = 12.5 };
+        feedbackForm.Children.Add(message);
+        feedbackForm.Children.Add(submitButtonHost);
+
+        var communityButton = ExternalAction("Join Discord", "https://cap.link/discord", primary: false);
+        communityButton.HorizontalAlignment = HorizontalAlignment.Left;
+        communityButton.FontSize = 13;
+        communityButton.Padding = new Thickness(12, 0);
+        communityButton.Height = 38;
+        var community = Section("Join the Community",
+            "Have questions, want to share ideas, or just hang out? Join the Cap Discord community.", communityButton);
+        if (community is StackPanel communityPanel && communityPanel.Children.Count > 1 && communityPanel.Children[1] is TextBlock communityDescription)
+            communityDescription.LineHeight = 19.5;
+        communityButton.Margin = new Thickness(-4, 8, -4, 0);
+        if (community is StackPanel communitySpacingPanel)
+            communitySpacingPanel.Spacing = 2;
+        community.Margin = new Thickness(0, 2.5, 0, 0);
+
+        var warningText = "The sync test takes over your screen with a flashing pattern and plays loud beeps for about 20 seconds per pipeline. Take your headphones off and leave the volume audible (the microphone test needs to hear the beeps through your speakers), and don't use the machine until it finishes.";
+        var warningContent = new Grid { ColumnDefinitions = new ColumnDefinitions("14,*"), ColumnSpacing = 10, VerticalAlignment = VerticalAlignment.Top };
+        warningContent.Children.Add(new Avalonia.Controls.Shapes.Path
+        {
+            Width = 14,
+            Height = 14,
+            Data = Geometry.Parse("M12 3 2 21h20L12 3z M12 9v4 M12 17h.01"),
+            Stroke = Brush("#F2C14E"),
+            StrokeThickness = 1.2,
+            StrokeLineCap = PenLineCap.Round,
+            StrokeJoin = PenLineJoin.Round,
+            Stretch = Stretch.Uniform,
+            VerticalAlignment = VerticalAlignment.Top
+        });
+        var warningLabel = Label(warningText, 12, MutedBrush, wrap: true);
+        warningLabel.LineHeight = 19.5;
+        Grid.SetColumn(warningLabel, 1);
+        warningContent.Children.Add(warningLabel);
+        var warning = new Border
+        {
+            Padding = new Thickness(12, 8.25),
+            Background = Brush("#2A220C"),
+            BorderBrush = Brush("#8D650C"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            Child = warningContent
         };
 
-        return Page("Feedback", "Write feedback and save a copy on this device.",
-            Section("Save feedback", null, Card(category, message, submit, Note("Feedback is saved locally; it is not sent to Cap."))),
-            Section("Join the Community", "Have questions, want to share ideas, or just hang out? Join the Cap Discord community.",
-                Card(ExternalAction("Open Cap Discord", "https://cap.link/discord", primary: false))),
-            Section("Diagnostic Report", "Diagnostic upload is unavailable in this Avalonia build.",
-                Card(DisabledToggleRow("Test microphone too", "Microphone diagnostics are not connected."),
-                    DisabledAction("Prepare diagnostic report", "The diagnostic reporting service is not connected."))));
+        var pipelines = Select(new[] { "Studio and Instant", "Studio", "Instant" });
+        pipelines.Width = 146;
+        var duration = Select(new[] { "20 seconds", "10 seconds", "30 seconds" });
+        duration.Width = 110;
+        var microphone = new ToggleSwitch { IsChecked = false, Width = 35, OnContent = string.Empty, OffContent = string.Empty };
+        var diagnosticOptions = Card(
+            SettingRow("Pipelines to test", "Studio recordings, Instant recordings, or both in one run.", pipelines, 46),
+            new Border { Height = 1, Background = Brush("#303030") },
+            SettingRow("Test duration", "Longer runs are more sensitive to slow drift.", duration, 46),
+            new Border { Height = 1, Background = Brush("#303030") },
+            SettingRow("Test microphone too", "Also records your microphone and checks it against the beeps it can hear.", microphone, 46));
+        var runDiagnostic = ActionButton("Run Diagnostic", primary: true);
+        runDiagnostic.FontSize = 13;
+        runDiagnostic.Padding = new Thickness(12, 0);
+        runDiagnostic.Height = 38;
+        runDiagnostic.HorizontalAlignment = HorizontalAlignment.Left;
+        runDiagnostic.Click += (_, _) => ToolTip.SetTip(runDiagnostic, "Diagnostics are not connected in this Avalonia build.");
+        var diagnosticContent = new StackPanel { Spacing = 10 };
+        diagnosticContent.Children.Add(warning);
+        diagnosticContent.Children.Add(diagnosticOptions);
+        diagnosticContent.Children.Add(runDiagnostic);
+        var diagnostics = Section("Diagnostic Report",
+            "Runs an audio/video sync test and collects your hardware, displays, cameras, microphones, Cap settings, details of your recent recordings and a copy of Cap's log file, so we can reproduce your setup instead of guessing at it. You can read the whole report before sending it.",
+            diagnosticContent);
+        if (diagnostics is StackPanel diagnosticsPanel && diagnosticsPanel.Children.Count > 1 && diagnosticsPanel.Children[1] is TextBlock diagnosticsDescription)
+            diagnosticsDescription.LineHeight = 19.5;
+        diagnosticContent.Margin = new Thickness(-4, 6.5, -6.5, 0);
+        diagnosticContent.Spacing = 10.5;
+        if (diagnostics is StackPanel diagnosticSpacingPanel)
+        {
+            diagnosticSpacingPanel.Spacing = 3;
+            diagnostics.Margin = new Thickness(0, 1, 0, 0);
+        }
+
+        var uploadLogs = ActionButton("Upload Logs", primary: false);
+        uploadLogs.FontSize = 13;
+        uploadLogs.Padding = new Thickness(12, 0);
+        uploadLogs.Height = 38;
+        uploadLogs.HorizontalAlignment = HorizontalAlignment.Left;
+        uploadLogs.Click += (_, _) => ToolTip.SetTip(uploadLogs, "Log upload is not connected in this Avalonia build.");
+        var debug = Section("Debug Information",
+            "Upload Cap's log file to help us diagnose issues. It records what the app did, which can include file paths and the names of things you recorded.",
+            uploadLogs);
+        if (debug is StackPanel debugPanel && debugPanel.Children.Count > 1 && debugPanel.Children[1] is TextBlock debugDescription)
+            debugDescription.LineHeight = 19.5;
+
+        var osInfo = new StackPanel { Spacing = 4 };
+        osInfo.Children.Add(Label("Operating System", 14, MutedBrush, weight: FontWeight.Medium));
+        osInfo.Children.Add(new Border
+        {
+            Padding = new Thickness(8, 6),
+            Background = Brush("#1A1A1A"),
+            CornerRadius = new CornerRadius(2),
+            Child = new TextBlock { Text = "macOS 26.7.1 (Apple Silicon)", FontSize = 12, FontFamily = "monospace", Foreground = MutedBrush }
+        });
+
+        var captureInfo = new StackPanel { Spacing = 4 };
+        captureInfo.Children.Add(Label("Capture Support", 14, MutedBrush, weight: FontWeight.Medium));
+        captureInfo.Children.Add(new Border
+        {
+            Padding = new Thickness(8, 4),
+            Background = Brush("#15321E"),
+            CornerRadius = new CornerRadius(4),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = Label("Screen Capture: Supported", 12, Brush("#4ADE80"))
+        });
+
+        var encoderInfo = new StackPanel { Spacing = 4 };
+        encoderInfo.Children.Add(Label("Available Encoders", 14, MutedBrush, weight: FontWeight.Medium));
+        var encoders = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        foreach (var encoder in new[] { "h264_videotoolbox", "libx264", "hevc_videotoolbox", "libx265" })
+        {
+            encoders.Children.Add(new Border
+            {
+                Padding = new Thickness(8, 4),
+                Background = Brush("#1A1A1A"),
+                CornerRadius = new CornerRadius(2),
+                Child = new TextBlock { Text = encoder, FontSize = 12, FontFamily = "monospace", Foreground = MutedBrush }
+            });
+        }
+        encoderInfo.Children.Add(encoders);
+        var systemContent = new StackPanel { Spacing = 12 };
+        systemContent.Children.Add(osInfo);
+        systemContent.Children.Add(captureInfo);
+        systemContent.Children.Add(encoderInfo);
+        var system = Section("System Information", null, systemContent);
+        systemContent.Margin = new Thickness(-4, 8, -6.5, 0);
+
+        var page = new StackPanel { Spacing = 28 };
+        page.Children.Add(PageHeader("Feedback", "Help us improve Cap by submitting feedback or reporting bugs. We'll get right on it."));
+        feedbackForm.Margin = new Thickness(0, -16, 0, 0);
+        page.Children.Add(feedbackForm);
+        page.Children.Add(community);
+        page.Children.Add(diagnostics);
+        page.Children.Add(debug);
+        page.Children.Add(system);
+        return page;
     }
 
     private static Control BuildChangelogPage()
@@ -870,11 +1112,12 @@ internal static class SettingsPageFactory
         return content;
     }
 
-    private static Control PageHeader(string title, string description, Control? action = null, double descriptionMaxWidth = 510)
+    private static Control PageHeader(string title, string description, Control? action = null, double descriptionMaxWidth = 510,
+        FontWeight? descriptionWeight = null)
     {
         var text = new StackPanel { Spacing = 4 };
         text.Children.Add(Label(title, 14, TextBrush, weight: FontWeight.SemiBold));
-        var descriptionLabel = Label(description, 12, MutedBrush, wrap: true);
+        var descriptionLabel = Label(description, 12, MutedBrush, wrap: true, weight: descriptionWeight);
         descriptionLabel.MaxWidth = descriptionMaxWidth;
         text.Children.Add(descriptionLabel);
 
@@ -888,21 +1131,22 @@ internal static class SettingsPageFactory
         return header;
     }
 
-    private static Control Section(string title, string? description, Control content, double contentTopMargin = 6.5)
+    private static Control Section(string title, string? description, Control content, double contentTopMargin = 6.5,
+        double descriptionMaxWidth = 510)
     {
         var section = new StackPanel { Spacing = 4 };
         section.Children.Add(Label(title, 14, TextBrush, weight: FontWeight.SemiBold));
         if (!string.IsNullOrWhiteSpace(description))
         {
             var descriptionLabel = Label(description, 12, MutedBrush, wrap: true);
-            descriptionLabel.MaxWidth = 510;
+            descriptionLabel.MaxWidth = descriptionMaxWidth;
             descriptionLabel.LineHeight = 16.5;
             section.Children.Add(descriptionLabel);
         }
         if (content is Border border)
             border.Margin = new Thickness(-4, contentTopMargin, -4, 0);
         else
-            content.Margin = new Thickness(0, 8, 0, 0);
+            content.Margin = new Thickness(-4, 8, -4, 0);
         section.Children.Add(content);
         return section;
     }
@@ -967,7 +1211,7 @@ internal static class SettingsPageFactory
         {
             Width = 130,
             MinHeight = 30,
-            SelectedIndex = selected,
+            FontSize = 12,
             Background = Brush("#282828"),
             BorderBrush = Brush("#383838"),
             Foreground = TextBrush,
@@ -975,6 +1219,7 @@ internal static class SettingsPageFactory
         };
         foreach (var value in values)
             combo.Items.Add(new ComboBoxItem { Content = value });
+        combo.SelectedIndex = selected;
         return combo;
     }
 
@@ -991,7 +1236,7 @@ internal static class SettingsPageFactory
             var option = new Border
             {
                 Height = 52,
-                Background = Brush(index == 0 ? "#102F51" : "#1A1A1A"),
+                Background = Brush(index == 0 ? "#0C2A49" : "#1A1A1A"),
                 BorderBrush = Brush(index == 0 ? "#1684FF" : "#303030"),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(9),
@@ -1039,7 +1284,7 @@ internal static class SettingsPageFactory
             var button = new Button
             {
                 Content = choiceGrid,
-                Padding = new Thickness(12, 13),
+                Padding = new Thickness(12, 12.25),
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Background = PanelBrush,
@@ -1070,7 +1315,7 @@ internal static class SettingsPageFactory
         foreach (var button in buttons)
         {
             var active = ReferenceEquals(button, selected);
-            button.Background = Brush(active ? "#102F51" : "#1A1A1A");
+            button.Background = Brush(active ? "#0C2A49" : "#1A1A1A");
             button.BorderBrush = Brush(active ? "#1684FF" : "#303030");
             if (button.Tag is Border radio)
             {
@@ -1266,14 +1511,16 @@ internal static class SettingsPageFactory
             Width = 36,
             Height = 36,
             CornerRadius = new CornerRadius(8),
-            Background = Brush("#252525"),
+            Background = Brush("#282828"),
             Child = new Avalonia.Controls.Shapes.Path
             {
                 Width = 18,
                 Height = 18,
                 Data = Geometry.Parse(iconPath),
                 Stroke = MutedBrush,
-                StrokeThickness = 1.8,
+                StrokeThickness = 2,
+                StrokeLineCap = PenLineCap.Round,
+                StrokeJoin = PenLineJoin.Round,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             }
@@ -1366,26 +1613,31 @@ internal static class SettingsPageFactory
 
     private static Button ImportButton(string text)
     {
-        var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
-        content.Children.Add(new Avalonia.Controls.Shapes.Path
+        var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+        content.Children.Add(new Viewbox
         {
-            Width = 16,
-            Height = 16,
-            Data = Geometry.Parse("M12 3v10 M8 10l4 4 4-4 M5 14v5h14v-5"),
-            Stroke = TextBrush,
-            StrokeThickness = 1.8,
-            StrokeLineCap = PenLineCap.Round,
+            Width = 14,
+            Height = 14,
+            Child = new Avalonia.Controls.Shapes.Path
+            {
+                Data = Geometry.Parse("M12 3v12 M7 10l5 5 5-5 M5 19h14"),
+                Stroke = TextBrush,
+                StrokeThickness = 1.8,
+                StrokeLineCap = PenLineCap.Round,
+                StrokeJoin = PenLineJoin.Round,
+            }
         });
-        content.Children.Add(Label(text, 12, TextBrush));
+        content.Children.Add(Label(text, 12, TextBrush, weight: FontWeight.Medium));
         return new Button
         {
             Content = content,
             Height = 36,
-            Padding = new Thickness(10.25, 0),
+            Padding = new Thickness(12, 0),
             Background = Brush("#2A2A2A"),
             BorderBrush = Brush("#3A3A3A"),
             BorderThickness = new Thickness(1),
             Foreground = TextBrush,
+            FontWeight = FontWeight.Medium,
             CornerRadius = new CornerRadius(18),
             HorizontalAlignment = HorizontalAlignment.Right
         };
@@ -1446,9 +1698,81 @@ internal static class SettingsPageFactory
 
     private static Control IntegrationCard(string name, string description, string actionText)
     {
-        var button = ActionButton(actionText, primary: false);
-        button.IsEnabled = false;
-        return Card(SettingRow(name, description, button, 78), Separator(), Note("Not connected"));
+        var button = ActionButton(actionText, primary: true);
+        button.Height = 28;
+        button.Padding = new Thickness(11, 0);
+        button.FontSize = 12;
+        ToolTip.SetTip(button, "Integrations are not connected in this Avalonia build.");
+        button.Click += (_, _) => ToolTip.SetTip(button, "Integrations are not connected in this Avalonia build.");
+
+        var titleRow = new Grid { ColumnDefinitions = new ColumnDefinitions("16,*,Auto"), ColumnSpacing = 8 };
+        titleRow.Children.Add(IntegrationIcon(name));
+        var nameLabel = Label(name, 13, TextBrush);
+        Grid.SetColumn(nameLabel, 1);
+        titleRow.Children.Add(nameLabel);
+        Grid.SetColumn(button, 2);
+        titleRow.Children.Add(button);
+
+        var content = new StackPanel { Spacing = 12, Margin = new Thickness(16) };
+        content.Children.Add(titleRow);
+        var body = Label(description, 12, MutedBrush, wrap: true);
+        body.LineHeight = 16;
+        content.Children.Add(body);
+        return Card(content);
+    }
+
+    private static Control IntegrationIcon(string name)
+    {
+        if (name == "Google Drive")
+        {
+            var drawing = new DrawingGroup();
+            AddIconGeometry(drawing,
+                "M6.6 66.85 10.45 73.5c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z",
+                "#0066DA");
+            AddIconGeometry(drawing,
+                "M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z",
+                "#00AC47");
+            AddIconGeometry(drawing,
+                "M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z",
+                "#EA4335");
+            AddIconGeometry(drawing,
+                "M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z",
+                "#00832D");
+            AddIconGeometry(drawing,
+                "M59.8 53H27.5L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z",
+                "#2684FC");
+            AddIconGeometry(drawing,
+                "M73.4 26.5 60.7 4.5c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z",
+                "#FFBA00");
+            return new Image
+            {
+                Source = new DrawingImage { Drawing = drawing },
+                Width = 16,
+                Height = 16,
+                Stretch = Stretch.Uniform,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+        }
+
+        return new Avalonia.Controls.Shapes.Path
+        {
+            Width = 16,
+            Height = 16,
+            Data = Geometry.Parse("M12 3c5 0 9 1.34 9 3s-4 3-9 3-9-1.34-9-3 4-3 9-3Z M3 6v6c0 1.66 4.03 3 9 3s9-1.34 9-3V6 M3 12v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6"),
+            Stroke = TextBrush,
+            StrokeThickness = 1.5,
+            Stretch = Stretch.Uniform,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+    }
+
+    private static void AddIconGeometry(DrawingGroup drawing, string path, string color)
+    {
+        drawing.Children.Add(new GeometryDrawing
+        {
+            Geometry = Geometry.Parse(path),
+            Brush = Brush(color)
+        });
     }
 
     private static Control TemplateRow(string title, string description)
@@ -1509,7 +1833,7 @@ internal static class SettingsPageFactory
             HorizontalAlignment = align,
             TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap,
             Margin = margin ?? default,
-            FontWeight = weight ?? FontWeight.Normal
+            FontWeight = weight ?? FontWeight.Medium
         };
     }
 
@@ -1520,10 +1844,11 @@ internal static class SettingsPageFactory
             Content = text,
             Height = 36,
             Padding = new Thickness(14, 0),
-            Background = Brush(primary ? "#1677ED" : "#2A2A2A"),
-            BorderBrush = Brush(primary ? "#2487FF" : "#3A3A3A"),
+            Background = Brush(primary ? "#0A84FF" : "#2A2A2A"),
+            BorderBrush = Brush(primary ? "#1689FF" : "#3A3A3A"),
             BorderThickness = new Thickness(1),
             Foreground = TextBrush,
+            FontWeight = FontWeight.Medium,
             CornerRadius = new CornerRadius(18),
             HorizontalAlignment = HorizontalAlignment.Right
         };
@@ -1550,7 +1875,7 @@ internal static class SettingsPageFactory
         Child = Label(text, 12, TextBrush)
     };
 
-    private static Control Separator() => new Border { Height = 1, Background = Brush("#2F2F2F"), Margin = new Thickness(0) };
+    private static Control Separator() => new Border { Height = 1, Background = Brush("#2F2F2F"), Margin = new Thickness(16, 0) };
 
     private static IEnumerable<Control> WithSeparators(IEnumerable<Control> rows)
     {

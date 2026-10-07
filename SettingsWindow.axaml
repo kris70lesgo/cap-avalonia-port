@@ -13,19 +13,19 @@
         RequestedThemeVariant="Dark">
 
   <Window.Resources>
-    <StreamGeometry x:Key="GearIcon">M12 2 14 4.2 16.8 4.7 19.4 3.6 21.4 5.6 20.3 8.2 20.8 11 23 12 22 14.1 19.8 15.1 19.3 17.9 20.4 20.5 18.4 22.5 15.8 21.4 13 21.9 12 24 10 23 9 20.8 6.2 20.3 3.6 21.4 1.6 19.4 2.7 16.8 2.2 14 0 13 1 11 3.2 10 3.7 7.2 2.6 4.6 4.6 2.6 7.2 3.7 10 3.2Z M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z</StreamGeometry>
-    <StreamGeometry x:Key="SlidersIcon">M4 6h16M4 12h16M4 18h16M8 3v6m8 0v6m-5 0v6</StreamGeometry>
+    <StreamGeometry x:Key="GearIcon">M6.39723 4.43782L6.08762 4.36637C5.60543 4.2551 5.09992 4.40008 4.75 4.75C4.40008 5.09992 4.2551 5.60543 4.36637 6.08762L4.43782 6.39723C4.62569 7.21131 4.29 8.05667 3.59485 8.5201L3.12404 8.83397C2.73417 9.09388 2.5 9.53144 2.5 10C2.5 10.4686 2.73417 10.9061 3.12404 11.166L3.59485 11.4799C4.29 11.9433 4.62569 12.7887 4.43782 13.6028L4.36637 13.9124C4.2551 14.3946 4.40008 14.9001 4.75 15.25C5.09992 15.5999 5.60543 15.7449 6.08762 15.6336L6.39723 15.5622C7.21131 15.3743 8.05667 15.71 8.5201 16.4052L8.83397 16.876C9.09388 17.2658 9.53144 17.5 10 17.5C10.4686 17.5 10.9061 17.2658 11.166 16.876L11.4799 16.4052C11.9433 15.71 12.7887 15.3743 13.6028 15.5622L13.9124 15.6336C14.3946 15.7449 14.9001 15.5999 15.25 15.25C15.5999 14.9001 15.7449 14.3946 15.6336 13.9124L15.5622 13.6028C15.3743 12.7887 15.71 11.9433 16.4052 11.4799L16.876 11.166C17.2658 10.9061 17.5 10.4686 17.5 10C17.5 9.53144 17.2658 9.09388 16.876 8.83397L16.4052 8.5201C15.71 8.05667 15.3743 7.21131 15.5622 6.39723L15.6336 6.08762C15.7449 5.60543 15.5999 5.09992 15.25 4.75C14.9001 4.40008 14.3946 4.2551 13.9124 4.36637L13.6028 4.43782C12.7887 4.62569 11.9433 4.29 11.4799 3.59485L11.166 3.12404C10.9061 2.73417 10.4686 2.5 10 2.5C9.53144 2.5 9.09388 2.73417 8.83397 3.12404L8.5201 3.59485C8.05667 4.29 7.21131 4.62569 6.39723 4.43782Z M12.5 10C12.5 11.3807 11.3807 12.5 10 12.5C8.61929 12.5 7.5 11.3807 7.5 10C7.5 8.61929 8.61929 7.5 10 7.5C11.3807 7.5 12.5 8.61929 12.5 10Z</StreamGeometry>
+    <StreamGeometry x:Key="SlidersIcon">M10 5H3 M12 19H3 M14 3v4 M16 17v4 M21 12h-9 M21 19h-5 M21 5h-7 M8 10v4 M8 12H3</StreamGeometry>
     <StreamGeometry x:Key="ShortcutIcon">M7.50001 7.50001V5.41668C7.50001 4.26608 6.56727 3.33334 5.41668 3.33334C4.26608 3.33334 3.33334 4.26608 3.33334 5.41668C3.33334 6.56727 4.26608 7.50001 5.41668 7.50001H7.50001ZM7.50001 7.50001H12.5M7.50001 7.50001V12.5M12.5 7.50001V5.41668C12.5 4.26608 13.4328 3.33334 14.5833 3.33334C15.7339 3.33334 16.6667 4.26608 16.6667 5.41668C16.6667 6.56727 15.7339 7.50001 14.5833 7.50001H12.5M12.5 7.50001V12.5M12.5 12.5H7.50001M12.5 12.5V14.5833C12.5 15.7339 13.4328 16.6667 14.5833 16.6667C15.7339 16.6667 16.6667 15.7339 16.6667 14.5833C16.6667 13.4328 15.7339 12.5 14.5833 12.5H12.5M7.50001 12.5V14.5833C7.50001 15.7339 6.56727 16.6667 5.41668 16.6667C4.26608 16.6667 3.33334 15.7339 3.33334 14.5833C3.33334 13.4328 4.26608 12.5 5.41668 12.5H7.50001Z</StreamGeometry>
-    <StreamGeometry x:Key="TerminalIcon">M4 6l6 6-6 6m8 0h8</StreamGeometry>
-    <StreamGeometry x:Key="RecordingsIcon">M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM10 9v6l5-3Z</StreamGeometry>
-    <StreamGeometry x:Key="ImageIcon">M13.3333 16.6667 8.43444 11.7678C7.45813 10.7915 5.87522 10.7915 4.89891 11.7678L3.33334 13.3333M5.83334 16.6667H14.1667C15.5474 16.6667 16.6667 15.5474 16.6667 14.1667V5.83334C16.6667 4.45263 15.5474 3.33334 14.1667 3.33334H5.83334C4.45263 3.33334 3.33334 4.45263 3.33334 5.83334V14.1667C3.33334 15.5474 4.45263 16.6667 5.83334 16.6667ZM13.75 7.91668C13.75 8.83715 13.0038 9.58334 12.0833 9.58334C11.1629 9.58334 10.4167 8.83715 10.4167 7.91668C10.4167 6.9962 11.1629 6.25001 12.0833 6.25001C13.0038 6.25001 13.75 6.9962 13.75 7.91668Z</StreamGeometry>
-    <StreamGeometry x:Key="BoltIcon">M13 2 4 13h6l-1 9 9-12h-6Z</StreamGeometry>
-    <StreamGeometry x:Key="TranscriptIcon">M3 5h18v14H3z M7 15h4m4 0h2M7 11h2m4 0h4</StreamGeometry>
-    <StreamGeometry x:Key="PlugIcon">M19 5 22 2M2 22l3-3M12.5 17.5 6.5 11.5M5 8l5-5m-2 2 8 8m-5-7-3 3m5-1-3 3m-5 2-2 2a6 6 0 0 0 8.5 8.5l2-2</StreamGeometry>
-    <StreamGeometry x:Key="GiftIcon">M3 10h18v11H3z M2 6h20v4H2z M12 6v15m0-15H8a2 2 0 1 1 2-2c1 1 2 2 2 2Zm0 0h4a2 2 0 1 0-2-2c-1 1-2 2-2 2Z</StreamGeometry>
-    <StreamGeometry x:Key="FeedbackIcon">M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4zM12 8v6m-3-3h6</StreamGeometry>
-    <StreamGeometry x:Key="BellIcon">M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4</StreamGeometry>
-    <StreamGeometry x:Key="AccountIcon">M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9a8 8 0 0 1 16 0</StreamGeometry>
+    <StreamGeometry x:Key="TerminalIcon">M12 19h8 m4 17 6-6-6-6</StreamGeometry>
+    <StreamGeometry x:Key="RecordingsIcon">M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z</StreamGeometry>
+    <StreamGeometry x:Key="ImageIcon">M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z M11 9a2 2 0 1 1-4 0a2 2 0 0 1 4 0z m10 6-3.086-3.086a2 2 0 0 0-2.828 0L6 21</StreamGeometry>
+    <StreamGeometry x:Key="BoltIcon">M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z</StreamGeometry>
+    <StreamGeometry x:Key="TranscriptIcon">M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z M7 15h4 M15 15h2 M7 11h2 M13 11h4</StreamGeometry>
+    <StreamGeometry x:Key="PlugIcon">m19 5 3-3 m2 22 3-3 M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z M7.5 13.5 10 11 M10.5 16.5 13 14 m12 6 6 6 2.3-2.3a2.4 2.4 0 0 0 0-3.4l-2.6-2.6a2.4 2.4 0 0 0-3.4 0Z</StreamGeometry>
+    <StreamGeometry x:Key="GiftIcon">M12 7v14 M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8 M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5 M3 7h18v4H3z</StreamGeometry>
+    <StreamGeometry x:Key="FeedbackIcon">M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z M12 8v6 M9 11h6</StreamGeometry>
+    <StreamGeometry x:Key="BellIcon">M10.268 21a2 2 0 0 0 3.464 0 M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326</StreamGeometry>
+    <StreamGeometry x:Key="AccountIcon">M12 3a5 5 0 1 0 0 10a5 5 0 0 0 0-10Z M20 21a8 8 0 0 0-16 0</StreamGeometry>
   </Window.Resources>
 
   <Window.Styles>
@@ -41,26 +41,11 @@
       <Setter Property="FontSize" Value="13" />
     </Style>
     <Style Selector="Button.nav:pointerover">
-      <Setter Property="Background" Value="#292929" />
+      <Setter Property="Background" Value="#282828" />
     </Style>
     <Style Selector="Button.nav.selected">
-      <Setter Property="Background" Value="#2C2C2C" />
+      <Setter Property="Background" Value="#282828" />
       <Setter Property="Foreground" Value="#F5F5F5" />
-    </Style>
-    <Style Selector="Button.theme-card">
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="#A8A8A8" />
-      <Setter Property="CornerRadius" Value="0" />
-    </Style>
-    <Style Selector="Button.theme-card:pointerover">
-      <Setter Property="Foreground" Value="#F0F0F0" />
-    </Style>
-    <Style Selector="Button.theme-card.selected">
-      <Setter Property="BorderBrush" Value="#1684FF" />
-      <Setter Property="Foreground" Value="#F2F2F2" />
     </Style>
     <Style Selector="Button.action">
       <Setter Property="Height" Value="38" />
@@ -70,15 +55,21 @@
       <Setter Property="Foreground" Value="#F0F0F0" />
       <Setter Property="CornerRadius" Value="22" />
     </Style>
+    <Style Selector="Button.action:disabled">
+      <Setter Property="Background" Value="#1C1C1C" />
+      <Setter Property="BorderBrush" Value="#303030" />
+      <Setter Property="Foreground" Value="#777777" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
   </Window.Styles>
 
   <Grid ColumnDefinitions="227,*">
     <!-- Settings navigation -->
-    <Border Grid.Column="0" Background="#161616" BorderBrush="#2C2C2C" BorderThickness="0,0,1,0">
+    <Border Grid.Column="0" Background="#1C1C1C" BorderBrush="#282828" BorderThickness="0,0,1,0">
       <Grid RowDefinitions="Auto,*,Auto">
         <Grid Grid.Row="0" Margin="13,45.5,12,16.5" ColumnDefinitions="34,*" Height="42">
           <Border Width="32" Height="32" CornerRadius="18" Background="#303030" VerticalAlignment="Center">
-            <Path Data="{StaticResource AccountIcon}" Width="16" Height="16" Stroke="#D0D0D0" StrokeThickness="1.5" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Path Data="{StaticResource AccountIcon}" Width="16" Height="16" Stroke="#D0D0D0" StrokeThickness="2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
           </Border>
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0" Spacing="1">
             <TextBlock Text="Agastya Khati" FontSize="13" Foreground="#F2F2F2" />
@@ -90,7 +81,7 @@
           <StackPanel Margin="10,0,10,10" Spacing="4" HorizontalAlignment="Stretch">
             <Button x:Name="NavGeneral" Classes="nav selected" Tag="General" Click="OnNavigationClick">
               <Grid ColumnDefinitions="16,*" ColumnSpacing="6">
-                <Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path x:Name="NavGeneralIcon" Data="{StaticResource GearIcon}" Fill="Transparent" Stroke="#0A84FF" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox>
+                <Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path x:Name="NavGeneralIcon" Data="{StaticResource GearIcon}" Fill="Transparent" Stroke="#0A84FF" StrokeThickness="1.66667" StrokeJoin="Round" /></Viewbox>
                 <TextBlock Grid.Column="1" Text="General" VerticalAlignment="Center" />
               </Grid>
             </Button>
@@ -98,7 +89,7 @@
               <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path x:Name="NavQualityIcon" Data="{StaticResource SlidersIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Recording quality" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Shortcuts" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource ShortcutIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Shortcuts" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource ShortcutIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="1.66667" StrokeLineCap="Square" /></Viewbox><TextBlock Grid.Column="1" Text="Shortcuts" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="CLI" Click="OnNavigationClick">
               <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource TerminalIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="CLI" VerticalAlignment="Center" /></Grid>
@@ -122,7 +113,7 @@
               <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource GiftIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Plan &amp; license" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Experimental" Click="OnNavigationClick">
-              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource GearIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Experimental" VerticalAlignment="Center" /></Grid>
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource GearIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="1.66667" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Experimental" VerticalAlignment="Center" /></Grid>
             </Button>
             <Button Classes="nav" Tag="Feedback" Click="OnNavigationClick">
               <Grid ColumnDefinitions="16,*" ColumnSpacing="6"><Viewbox Width="16" Height="16" VerticalAlignment="Center"><Path Data="{StaticResource FeedbackIcon}" Fill="Transparent" Stroke="#A4A4A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" /></Viewbox><TextBlock Grid.Column="1" Text="Feedback" VerticalAlignment="Center" /></Grid>
@@ -146,36 +137,30 @@
 
     <!-- The General page mirrors Cap's Appearance, App, and Recording settings. -->
     <ScrollViewer Grid.Column="1" x:Name="GeneralContent" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="20.5,21,27,24" Spacing="30">
+      <StackPanel Margin="20.5,20.5,27,24" Spacing="30">
         <StackPanel Spacing="4">
           <TextBlock Text="Appearance" FontSize="14" FontWeight="SemiBold" Foreground="#F1F1F1" />
           <TextBlock Text="Match Cap to your system theme or pick a fixed look." FontSize="12" Foreground="#A1A1A1" />
           <Border Margin="-4,8,-4,0" Padding="16" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
-              <Button Classes="theme-card selected" Grid.Column="0" HorizontalAlignment="Stretch" IsEnabled="False" ToolTip.Tip="The reference Cap app uses the system theme.">
-                <StackPanel Spacing="9" HorizontalAlignment="Stretch">
-                  <Border Height="91" CornerRadius="8" BorderBrush="#0A84FF" BorderThickness="2" ClipToBounds="True">
-                    <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-auto.jpg" Stretch="UniformToFill" />
-                  </Border>
-                  <TextBlock Text="System" FontSize="12" FontWeight="Medium" Foreground="#F2F2F2" HorizontalAlignment="Center" />
-                </StackPanel>
-              </Button>
-              <Button Classes="theme-card" Grid.Column="1" HorizontalAlignment="Stretch" IsEnabled="False" ToolTip.Tip="Light theme is not available in this build.">
-                <StackPanel Spacing="9" HorizontalAlignment="Stretch">
-                  <Border Height="91" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" ClipToBounds="True">
-                    <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-light.jpg" Stretch="UniformToFill" />
-                  </Border>
-                  <TextBlock Text="Light" FontSize="12" FontWeight="Medium" Foreground="#8E8E8E" HorizontalAlignment="Center" />
-                </StackPanel>
-              </Button>
-              <Button Classes="theme-card" Grid.Column="2" HorizontalAlignment="Stretch" IsEnabled="False" ToolTip.Tip="Dark theme is active.">
-                <StackPanel Spacing="9" HorizontalAlignment="Stretch">
-                  <Border Height="91" CornerRadius="8" BorderBrush="#3A3A3A" BorderThickness="1" ClipToBounds="True">
-                    <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-dark.jpg" Stretch="UniformToFill" />
-                  </Border>
-                  <TextBlock Text="Dark" FontSize="12" FontWeight="Medium" Foreground="#8E8E8E" HorizontalAlignment="Center" />
-                </StackPanel>
-              </Button>
+              <StackPanel Grid.Column="0" Spacing="9" HorizontalAlignment="Stretch">
+                <Border Height="91" CornerRadius="8" Background="#1C1C1C" BorderBrush="#0A84FF" BorderThickness="2" ClipToBounds="True">
+                  <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-auto.jpg" Stretch="UniformToFill" />
+                </Border>
+                <TextBlock Text="System" FontSize="12" FontWeight="Medium" Foreground="#F2F2F2" HorizontalAlignment="Center" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="9" HorizontalAlignment="Stretch">
+                <Border Height="91" CornerRadius="8" Background="#1C1C1C" BorderBrush="#303030" BorderThickness="2" ClipToBounds="True">
+                  <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-light.jpg" Stretch="UniformToFill" />
+                </Border>
+                <TextBlock Text="Light" FontSize="12" FontWeight="Medium" Foreground="#8E8E8E" HorizontalAlignment="Center" />
+              </StackPanel>
+              <StackPanel Grid.Column="2" Spacing="9" HorizontalAlignment="Stretch">
+                <Border Height="91" CornerRadius="8" Background="#1C1C1C" BorderBrush="#303030" BorderThickness="2" ClipToBounds="True">
+                  <Image Source="avares://CapAvalonia/assets/Cap/theme-preview-dark.jpg" Stretch="UniformToFill" />
+                </Border>
+                <TextBlock Text="Dark" FontSize="12" FontWeight="Medium" Foreground="#8E8E8E" HorizontalAlignment="Center" />
+              </StackPanel>
             </Grid>
           </Border>
         </StackPanel>
@@ -236,12 +221,12 @@
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Delete Instant recordings after upload" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="This build saves Instant recordings locally and has no upload service." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Delete Instant recordings after upload" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Cap removes the local file once it has uploaded successfully." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
                 <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Upload and delete behavior is unavailable in this local-only build." />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
-                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Crash-recoverable recording" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Record in fragments that can be recovered after a crash or power loss. Uses slightly more space during capture." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
+                <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Crash-recoverable recording" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Record in fragments that can be recovered after a crash or power loss. Slightly larger files during capture." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
                 <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />

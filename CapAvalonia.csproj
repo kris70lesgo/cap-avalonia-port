@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="assets/Cap/*.png;assets/Cap/*.jpg" />
+    <AvaloniaResource Include="assets/Fonts/*.ttf" />
     <PackageReference Include="Avalonia" Version="12.1.3" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />

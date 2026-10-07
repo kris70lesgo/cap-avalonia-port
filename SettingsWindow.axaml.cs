@@ -16,6 +16,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        Opened += (_, _) => MacTitlebarButtonOffset.Apply(this);
         LoadAndPersistGeneralControls();
         UpdateProjectNamePreview(ProjectNameInput.Text);
         RefreshRecordingFolderDisplay();
