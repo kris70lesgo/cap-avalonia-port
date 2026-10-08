@@ -15,7 +15,7 @@ internal sealed class RecordingOverlayWindow : Window
     private readonly DispatcherTimer _timer;
     private readonly DateTime _startedAt = DateTime.Now;
 
-    public RecordingOverlayWindow(Window owner, Action stop)
+    public RecordingOverlayWindow(Window owner, Action stop, Action<object?, KeyEventArgs> handleShortcut)
     {
         Title = "Cap Recording";
         Width = 240;
@@ -48,6 +48,7 @@ internal sealed class RecordingOverlayWindow : Window
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
         };
         stopButton.Click += (_, _) => stop();
+        KeyDown += (sender, args) => handleShortcut(sender, args);
         var left = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 7, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
         left.Children.Add(dot);
         left.Children.Add(status);
@@ -80,7 +81,11 @@ internal sealed class RecordingOverlayWindow : Window
             var elapsed = DateTime.Now - _startedAt;
             _elapsed.Text = $"{(int)elapsed.TotalMinutes:00}:{elapsed.Seconds:00}";
         };
-        Opened += (_, _) => _timer.Start();
+        Opened += (_, _) =>
+        {
+            MacWindowCaptureProtection.ExcludeFromCapture(this);
+            _timer.Start();
+        };
         Closed += (_, _) => _timer.Stop();
     }
 

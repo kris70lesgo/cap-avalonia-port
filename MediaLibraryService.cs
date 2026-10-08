@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -35,6 +36,55 @@ internal static class MediaLibraryService
         }
     }
     public static string ScreenshotsDirectory => Path.Combine(AppDataDirectory, "Screenshots");
+    public static bool IsFfmpegAvailable
+    {
+        get
+        {
+            try { _ = FindFfmpeg(); return true; }
+            catch { return false; }
+        }
+    }
+
+    public static IReadOnlySet<string> GetAvailableVideoEncoders()
+    {
+        try
+        {
+            var startInfo = new ProcessStartInfo(FindFfmpeg())
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true
+            };
+            startInfo.ArgumentList.Add("-hide_banner");
+            startInfo.ArgumentList.Add("-encoders");
+            using var process = Process.Start(startInfo);
+            if (process is null)
+                return new HashSet<string>(StringComparer.Ordinal);
+
+            var outputTask = process.StandardOutput.ReadToEndAsync();
+            var errorTask = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(5000))
+            {
+                try { process.Kill(entireProcessTree: true); } catch { }
+                return new HashSet<string>(StringComparer.Ordinal);
+            }
+
+            var output = outputTask.GetAwaiter().GetResult() + Environment.NewLine + errorTask.GetAwaiter().GetResult();
+            if (process.ExitCode != 0)
+                return new HashSet<string>(StringComparer.Ordinal);
+
+            return output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                .Where(parts => parts.Length >= 2 && parts[0].Length == 6)
+                .Select(parts => parts[1])
+                .ToHashSet(StringComparer.Ordinal);
+        }
+        catch
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+    }
 
     public static IReadOnlyList<MediaLibraryItem> GetItems(bool screenshots)
     {
@@ -90,18 +140,21 @@ internal static class MediaLibraryService
 
     public static async Task<string> CaptureScreenshotAsync(CaptureArea? area = null, int screenOrdinal = 0)
     {
+        MacScreenCaptureAccess.EnsureAvailable();
         Directory.CreateDirectory(ScreenshotsDirectory);
         var path = Path.Combine(ScreenshotsDirectory, $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png");
 
         if (OperatingSystem.IsMacOS() && area is null && screenOrdinal == 0)
         {
             await RunAndCheckAsync("/usr/sbin/screencapture", new[] { "-x", path }, TimeSpan.FromSeconds(30));
+            EnsureCaptureFile(path, "screenshot");
             return path;
         }
 
         var ffmpeg = FindFfmpeg();
         var startInfo = await BuildCaptureStartInfoAsync(ffmpeg, path, screenshot: true, screenOrdinal: screenOrdinal, area: area);
         await RunAndCheckAsync(startInfo, TimeSpan.FromSeconds(30));
+        EnsureCaptureFile(path, "screenshot");
         return path;
     }
 
@@ -110,32 +163,58 @@ internal static class MediaLibraryService
         int screenOrdinal = 0, CaptureArea? area = null, string? nameTemplate = null, string? recordingMode = null,
         string? targetKind = null)
     {
+        if (!cameraOnly)
+            MacScreenCaptureAccess.EnsureAvailable();
         Directory.CreateDirectory(RecordingsDirectory);
         var baseName = BuildRecordingName(nameTemplate, recordingMode ?? "Studio", cameraOnly, area, targetKind);
         var path = UniqueDestination(RecordingsDirectory, baseName + ".mp4");
         var startInfo = await BuildCaptureStartInfoAsync(FindFfmpeg(), path, screenshot: false, frameRate, quality,
             microphoneIndex, systemAudioIndex, cameraIndex, cameraOnly, screenOrdinal, area);
+        startInfo.ArgumentList.Insert(3, "-progress");
+        startInfo.ArgumentList.Insert(4, "pipe:1");
+        startInfo.ArgumentList.Insert(5, "-nostats");
         startInfo.RedirectStandardInput = true;
+        startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
 
         var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
         var errors = new StringBuilder();
+        var firstFrameCaptured = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         process.ErrorDataReceived += (_, args) =>
         {
             if (!string.IsNullOrWhiteSpace(args.Data))
                 errors.AppendLine(args.Data);
+        };
+        process.OutputDataReceived += (_, args) =>
+        {
+            if (args.Data is not null && args.Data.StartsWith("frame=", StringComparison.Ordinal) &&
+                int.TryParse(args.Data.AsSpan("frame=".Length), out var frame) && frame > 0)
+                firstFrameCaptured.TrySetResult();
         };
 
         if (!process.Start())
             throw new InvalidOperationException("FFmpeg did not start.");
 
         process.BeginErrorReadLine();
-        await Task.Delay(500);
-        if (process.HasExited)
+        process.BeginOutputReadLine();
+        var exited = process.WaitForExitAsync();
+        var startupTimeout = Task.Delay(TimeSpan.FromSeconds(15));
+        var startupResult = await Task.WhenAny(firstFrameCaptured.Task, exited, startupTimeout);
+        if (startupResult != firstFrameCaptured.Task)
         {
-            await process.WaitForExitAsync();
+            if (startupResult == startupTimeout && !process.HasExited)
+            {
+                try { process.Kill(entireProcessTree: true); } catch { }
+            }
+            await exited;
+            process.WaitForExit(); // Drain redirected FFmpeg output before inspecting the diagnostics.
+            var exitedBeforeFirstFrame = startupResult == exited;
+            var detail = UsefulError(errors.ToString(), exitedBeforeFirstFrame
+                ? "FFmpeg stopped before it captured a video frame."
+                : "FFmpeg did not capture a video frame within 15 seconds. Check Screen Recording permission and the selected capture devices.");
+            try { if (File.Exists(path)) File.Delete(path); } catch { }
             process.Dispose();
-            throw new InvalidOperationException(UsefulError(errors.ToString(), "Screen recording stopped before it could start."));
+            throw new InvalidOperationException(detail);
         }
 
         return new ActiveRecordingSession(process, path, errors);
@@ -384,7 +463,7 @@ internal static class MediaLibraryService
                     cameraIndex = devices.FirstOrDefault(device => device.Kind == "Camera")?.Index;
                 if (cameraIndex is null)
                     throw new InvalidOperationException("Choose a camera before starting Camera Only recording.");
-                AddAvFoundationInput(startInfo, $"{cameraIndex}:none", frameRate, captureCursor: false);
+                AddAvFoundationInput(startInfo, $"{cameraIndex}:none", Math.Min(frameRate, 30), captureCursor: false);
             }
             else
             {
@@ -397,7 +476,7 @@ internal static class MediaLibraryService
             }
 
             if (!screenshot && !cameraOnly && cameraIndex is not null)
-                AddAvFoundationInput(startInfo, $"{cameraIndex}:none", frameRate, captureCursor: false, videoSize: "1280x720");
+                AddAvFoundationInput(startInfo, $"{cameraIndex}:none", Math.Min(frameRate, 30), captureCursor: false);
 
             var audioInputIndices = new List<int>();
             var videoInputCount = cameraOnly || cameraIndex is null || screenshot ? 1 : 2;
@@ -413,34 +492,43 @@ internal static class MediaLibraryService
             }
 
             var cameraOverlay = !screenshot && !cameraOnly && cameraIndex is not null;
-            if (area is not null && !cameraOverlay)
+            var filterGraph = new List<string>();
+            if (cameraOverlay)
+            {
+                if (area is not null)
+                    filterGraph.Add($"[0:v]crop={area.Width}:{area.Height}:{area.X}:{area.Y},split[screenScale][screenBase]");
+                else
+                    filterGraph.Add("[0:v]split[screenScale][screenBase]");
+
+                filterGraph.Add("[1:v]crop='min(iw,ih)':'min(iw,ih)'[cameraSquare]");
+                filterGraph.Add("[cameraSquare][screenScale]scale=w='min(480,rw*0.18)':h='min(480,rw*0.18)'[cameraSized]");
+                filterGraph.Add("[cameraSized]format=rgba," +
+                    "geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='clip(min(W,H)/2+0.5-sqrt(pow(X-W/2,2)+pow(Y-H/2,2)),0,1)*255'[camera]");
+                filterGraph.Add("[screenBase][camera]overlay=main_w-overlay_w-28:main_h-overlay_h-28:format=auto[video]");
+                startInfo.ArgumentList.Add("-map");
+                startInfo.ArgumentList.Add("[video]");
+            }
+            else if (area is not null && audioInputIndices.Count > 1)
+            {
+                filterGraph.Add($"[0:v]crop={area.Width}:{area.Height}:{area.X}:{area.Y}[video]");
+                startInfo.ArgumentList.Add("-map");
+                startInfo.ArgumentList.Add("[video]");
+            }
+            else if (area is not null)
             {
                 startInfo.ArgumentList.Add("-vf");
                 startInfo.ArgumentList.Add($"crop={area.Width}:{area.Height}:{area.X}:{area.Y}");
             }
 
-            if (cameraOverlay)
-            {
-                startInfo.ArgumentList.Add("-filter_complex");
-                startInfo.ArgumentList.Add(area is null
-                    ? "[1:v]scale=320:-1[camera];[0:v][camera]overlay=W-w-24:H-h-24[v]"
-                    : $"[0:v]crop={area.Width}:{area.Height}:{area.X}:{area.Y}[screen];[1:v]scale=320:-1[camera];[screen][camera]overlay=W-w-24:H-h-24[v]");
-                startInfo.ArgumentList.Add("-map");
-                startInfo.ArgumentList.Add("[v]");
-            }
-
-            if (audioInputIndices.Count > 0)
+            if (audioInputIndices.Count == 1)
             {
                 if (!cameraOverlay)
                 {
                     startInfo.ArgumentList.Add("-map");
                     startInfo.ArgumentList.Add("0:v:0");
                 }
-                foreach (var inputIndex in audioInputIndices)
-                {
-                    startInfo.ArgumentList.Add("-map");
-                    startInfo.ArgumentList.Add($"{inputIndex}:a:0?");
-                }
+                startInfo.ArgumentList.Add("-map");
+                startInfo.ArgumentList.Add($"{audioInputIndices[0]}:a:0?");
                 startInfo.ArgumentList.Add("-c:a");
                 startInfo.ArgumentList.Add("aac");
                 if (microphoneIndex is not null && AppPreferencesStore.Get("general.Studio Sound on new recordings") != "false")
@@ -448,6 +536,42 @@ internal static class MediaLibraryService
                     startInfo.ArgumentList.Add("-filter:a:0");
                     startInfo.ArgumentList.Add("afftdn");
                 }
+            }
+            else if (audioInputIndices.Count > 1)
+            {
+                if (!cameraOverlay && area is null)
+                {
+                    startInfo.ArgumentList.Add("-map");
+                    startInfo.ArgumentList.Add("0:v:0");
+                }
+
+                var audioLabels = new List<string>();
+                for (var index = 0; index < audioInputIndices.Count; index++)
+                {
+                    var inputIndex = audioInputIndices[index];
+                    var label = $"audio{index}";
+                    var isMicrophone = microphoneIndex is not null && index == 0;
+                    if (isMicrophone && AppPreferencesStore.Get("general.Studio Sound on new recordings") != "false")
+                        filterGraph.Add($"[{inputIndex}:a:0]afftdn[{label}]");
+                    else
+                        label = $"{inputIndex}:a:0";
+                    audioLabels.Add($"[{label}]");
+                }
+                filterGraph.Add($"{string.Concat(audioLabels)}amix=inputs={audioInputIndices.Count}:duration=longest:dropout_transition=2[audio]");
+                startInfo.ArgumentList.Add("-map");
+                startInfo.ArgumentList.Add("[audio]");
+                startInfo.ArgumentList.Add("-c:a");
+                startInfo.ArgumentList.Add("aac");
+            }
+            else if (cameraOverlay)
+            {
+                // The filtered webcam composition is already explicitly mapped above.
+            }
+
+            if (filterGraph.Count > 0)
+            {
+                startInfo.ArgumentList.Add("-filter_complex");
+                startInfo.ArgumentList.Add(string.Join(';', filterGraph));
             }
         }
         else if (OperatingSystem.IsWindows())
@@ -712,12 +836,30 @@ internal static class MediaLibraryService
         return candidate;
     }
 
+    private static void EnsureCaptureFile(string path, string mediaType)
+    {
+        if (!File.Exists(path) || new FileInfo(path).Length == 0)
+            throw new InvalidOperationException($"The capture command finished without producing a {mediaType} file.");
+    }
+
     private static string UsefulError(string output, string fallback)
     {
-        var line = output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(value => value.Trim())
-            .LastOrDefault(value => !string.IsNullOrWhiteSpace(value));
-        return string.IsNullOrWhiteSpace(line) ? fallback : line;
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+        var errorLine = lines.LastOrDefault(value =>
+            value.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("failed", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("denied", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("cannot", StringComparison.OrdinalIgnoreCase));
+        var usefulLine = errorLine ?? lines.LastOrDefault(value =>
+            !value.StartsWith("[in#", StringComparison.Ordinal) &&
+            !value.StartsWith("[out#", StringComparison.Ordinal) &&
+            !value.Contains("NSKVONotifying_AVCaptureScreenInput", StringComparison.Ordinal) &&
+            !Regex.IsMatch(value, @"^\[[^]]+\]\s+[a-z0-9_]+$", RegexOptions.IgnoreCase));
+        return usefulLine ?? fallback;
     }
 }
 
@@ -726,6 +868,7 @@ internal sealed class ActiveRecordingSession
     private readonly Process _process;
     private readonly StringBuilder _errors;
     private bool _stopped;
+    private bool _paused;
 
     public ActiveRecordingSession(Process process, string outputPath, StringBuilder errors)
     {
@@ -737,16 +880,45 @@ internal sealed class ActiveRecordingSession
     public string OutputPath { get; }
     public bool HasExited => _process.HasExited;
 
+    public bool TogglePaused()
+    {
+        if (_stopped || _process.HasExited)
+            throw new InvalidOperationException("The recording is no longer active.");
+        SetPaused(!_paused);
+        _paused = !_paused;
+        return _paused;
+    }
+
+    private void SetPaused(bool paused)
+    {
+        if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsLinux())
+            throw new PlatformNotSupportedException("Pause and resume shortcuts currently require macOS or Linux.");
+
+        var signal = OperatingSystem.IsMacOS()
+            ? (paused ? 17 : 19) // SIGSTOP / SIGCONT
+            : (paused ? 19 : 18);
+        var result = OperatingSystem.IsMacOS()
+            ? UnixProcessSignals.KillMac(_process.Id, signal)
+            : UnixProcessSignals.KillLinux(_process.Id, signal);
+        if (result != 0)
+            throw new InvalidOperationException("Could not pause or resume FFmpeg (error " + Marshal.GetLastPInvokeError() + ").");
+    }
+
     public void StopForShutdown()
     {
         if (_stopped)
             return;
-        _stopped = true;
         try
         {
             if (!_process.HasExited)
             {
-                _process.StandardInput.WriteLine("q");
+                if (_paused)
+                {
+                    SetPaused(false);
+                    _paused = false;
+                }
+                _stopped = true;
+                RequestGracefulStop();
                 if (!_process.WaitForExit(8000))
                     _process.Kill(entireProcessTree: true);
             }
@@ -764,6 +936,7 @@ internal sealed class ActiveRecordingSession
         }
         finally
         {
+            _stopped = true;
             _process.Dispose();
         }
     }
@@ -772,30 +945,70 @@ internal sealed class ActiveRecordingSession
     {
         if (_stopped)
             return OutputPath;
-        _stopped = true;
 
+        var gracefulSignalSent = false;
         if (!_process.HasExited)
         {
-            await _process.StandardInput.WriteLineAsync("q");
+            if (_paused)
+            {
+                SetPaused(false);
+                _paused = false;
+            }
+            _stopped = true;
+            gracefulSignalSent = RequestGracefulStop();
             var exitTask = _process.WaitForExitAsync();
             if (await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromSeconds(12))) != exitTask)
             {
-                _process.Kill(entireProcessTree: true);
-                throw new TimeoutException("FFmpeg did not stop recording in time.");
+                try { _process.Kill(entireProcessTree: true); } catch { }
+                await _process.WaitForExitAsync();
+                _process.WaitForExit();
+                _process.Dispose();
+                throw new TimeoutException($"FFmpeg did not stop recording in time. A partial file may remain at {OutputPath}.");
             }
             await exitTask;
         }
 
+        _stopped = true;
         await _process.WaitForExitAsync();
+        _process.WaitForExit(); // Complete asynchronous stderr delivery before reading process errors.
         var code = _process.ExitCode;
         _process.Dispose();
 
-        if (code != 0)
+        if (code != 0 && !(gracefulSignalSent && code == 255))
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(_errors.ToString())
                 ? "The recording stopped with an error."
                 : _errors.ToString().Trim());
         if (!File.Exists(OutputPath) || new FileInfo(OutputPath).Length == 0)
             throw new InvalidOperationException("The recording finished without producing a video file.");
+        try
+        {
+            var duration = await MediaLibraryService.GetVideoDurationAsync(OutputPath);
+            if (duration < 0.05)
+                throw new InvalidOperationException("The recorded video is too short to play.");
+        }
+        catch (Exception error)
+        {
+            throw new InvalidOperationException("The recording finished, but its MP4 could not be read: " + error.Message, error);
+        }
         return OutputPath;
     }
+
+    private bool RequestGracefulStop()
+    {
+        if (OperatingSystem.IsMacOS() && UnixProcessSignals.KillMac(_process.Id, 2) == 0)
+            return true;
+        if (OperatingSystem.IsLinux() && UnixProcessSignals.KillLinux(_process.Id, 2) == 0)
+            return true;
+        _process.StandardInput.WriteLine("q");
+        return false;
+    }
+}
+
+internal static class UnixProcessSignals
+{
+    [DllImport("libSystem.B.dylib", EntryPoint = "kill", SetLastError = true)]
+    internal static extern int KillMac(int processId, int signal);
+
+    [DllImport("libc", EntryPoint = "kill", SetLastError = true)]
+    internal static extern int KillLinux(int processId, int signal);
 }

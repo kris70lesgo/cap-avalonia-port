@@ -88,9 +88,10 @@ internal sealed class CaptureDevicePickerWindow : Window
         {
             try
             {
-                var devices = (await MediaLibraryService.ListMacCaptureDevicesAsync())
-                    .Where(device => device.Kind == (kind == "System Audio" ? "Microphone" : kind))
-                    .ToArray();
+                var availableDevices = await MediaLibraryService.ListMacCaptureDevicesAsync();
+                var devices = kind == "System Audio"
+                    ? availableDevices.Where(device => device.Kind == "Microphone" && IsLikelyLoopbackDevice(device.Name)).ToArray()
+                    : availableDevices.Where(device => device.Kind == kind).ToArray();
                 list.Children.Add(DeviceButton("Off", selectedIndex is null, () => { selected(null); Close(); }));
                 foreach (var device in devices)
                 {
@@ -127,6 +128,13 @@ internal sealed class CaptureDevicePickerWindow : Window
         };
         button.Click += (_, _) => click();
         return button;
+    }
+
+    private static bool IsLikelyLoopbackDevice(string name)
+    {
+        var normalized = name.ToLowerInvariant();
+        return new[] { "blackhole", "soundflower", "loopback", "virtual", "vb-cable", "ishowu", "audio capture", "aggregate", "multi-output" }
+            .Any(marker => normalized.Contains(marker, StringComparison.Ordinal));
     }
 }
 

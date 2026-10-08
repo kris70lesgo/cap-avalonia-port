@@ -91,6 +91,9 @@ public partial class SettingsWindow : Window
     {
         foreach (var toggle in GeneralContent.GetVisualDescendants().OfType<ToggleSwitch>())
         {
+            if (!toggle.IsEnabled)
+                continue;
+
             var key = GetPreferenceKey(toggle);
             if (key is null)
                 continue;

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -26,7 +27,7 @@ internal static class SettingsPageFactory
         "CLI" => BuildCliPage(),
         "Recordings" => BuildRecordingsPage(owner),
         "Screenshots" => BuildScreenshotsPage(owner),
-        "Automations" => BuildAutomationsPage(),
+        "Automations" => LocalBackupAutomationPage.Build(owner),
         "Transcription" => BuildTranscriptionPage(),
         "Integrations" => BuildIntegrationsPage(),
         "Plan & license" => BuildLicensePage(),
@@ -42,26 +43,20 @@ internal static class SettingsPageFactory
             ("Balanced", "Recommended", "Clear, detailed recordings with a practical file size. Best for everyday use."),
             ("Smaller files", "", "Uses less disk space. Can reduce detail, especially when recording with a camera."),
             ("Maximum detail", "", "Preserves more detail for demanding edits. Creates larger files and needs more disk space."));
-
         var instantChoices = ResolutionChoices();
-        var shareLinksEnabled = bool.TryParse(AppPreferencesStore.Get("quality.autoOpenShareLinks"), out var savedShareLinks)
-            ? savedShareLinks
-            : true;
+
         var shareLinksToggle = new ToggleSwitch
         {
-            IsChecked = shareLinksEnabled,
+            IsChecked = false,
             Width = 38,
             OnContent = string.Empty,
             OffContent = string.Empty,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 0, 0)
+            Margin = new Thickness(12, 0, 0, 0),
+            IsEnabled = false
         };
-        shareLinksToggle.IsCheckedChanged += (_, _) =>
-        {
-            try { AppPreferencesStore.Set("quality.autoOpenShareLinks", shareLinksToggle.IsChecked?.ToString() ?? "false"); }
-            catch { }
-        };
-        var shareRows = Card(SettingRow("Open share links automatically", "Open the link in your browser when an upload finishes.", shareLinksToggle, 62));
+        ToolTip.SetTip(shareLinksToggle, "Share links are not available in this local build.");
+        var shareRows = Card(SettingRow("Open share links automatically", "Share links are not available in this local build.", shareLinksToggle, 62));
         var studioSection = Section("Studio", "Saved to your computer, ready to edit. All three quality options are available on every plan.",
             Card(studioChoices,
                 Label("These options affect the original recording. Choose your final export resolution and file size in the editor.", 12, MutedBrush, wrap: true, margin: new Thickness(16, 8, 16, 19)),
@@ -70,12 +65,9 @@ internal static class SettingsPageFactory
 
         return Page("Recording quality", "Choose how new recordings look and how much space they use.",
             studioSection,
-            Section("Instant", "Uploads while you record, so your share link is ready when you stop.",
-                Card(Label("Maximum resolution", 13, TextBrush, weight: FontWeight.Medium, margin: new Thickness(16, 16, 16, 14.5)), instantChoices,
-                    Label("Smaller uploads. Good for quick updates. Resolution is limited by the screen or area you record.", 12, MutedBrush, wrap: true, margin: new Thickness(12, 10)),
-                    new Border { Height = 1, Background = Brush("#303030"), Margin = new Thickness(16, 16, 16, 0) },
-                    Label("720p is included. Cap Pro unlocks 1080p, 1440p and 4K for Instant recordings.", 12, MutedBrush, wrap: true, margin: new Thickness(12, 13.5, 12, 8)),
-                    CreateUnavailablePlansButton()), contentTopMargin: 8.5),
+            Section("Instant", "Fast local capture. Recordings appear in your library when you stop.",
+                Card(Label("Recording resolution", 13, TextBrush, weight: FontWeight.Medium, margin: new Thickness(16, 16, 16, 14.5)), instantChoices,
+                    Label("Local recordings keep the native resolution of the selected display or capture area.", 12, MutedBrush, wrap: true, margin: new Thickness(12, 10))), contentTopMargin: 8.5),
             Section("Sharing", null, shareRows));
     }
 
@@ -83,25 +75,28 @@ internal static class SettingsPageFactory
     {
         var shortcuts = new[]
         {
-            ("Screenshot current display", "screenshot.display"),
-            ("Screenshot current window", "screenshot.window"),
-            ("Screenshot area picker", "screenshot.area"),
-            ("Open recording picker", "recording.picker"),
-            ("Stop recording", "recording.stop"),
-            ("Restart recording", "recording.restart"),
-            ("Pause/resume recording", "recording.pause"),
-            ("Cycle recording mode", "recording.cycle"),
-            ("Record display", "recording.display"),
-            ("Record window", "recording.window"),
-            ("Record area", "recording.area")
+            ("Screenshot current display", "screenshot.display", "NONE"),
+            ("Screenshot current window", "screenshot.window", "NONE"),
+            ("Screenshot area picker", "screenshot.area", "NONE"),
+            ("Open recording picker", "recording.picker", "NONE"),
+            ("Stop recording", "recording.stop", "NONE"),
+            ("Restart recording", "recording.restart", "NONE"),
+            ("Pause/resume recording", "recording.pause", "NONE"),
+            ("Cycle recording mode", "recording.cycle", "NONE"),
+            ("Record display", "recording.display", "NONE"),
+            ("Record window", "recording.window", "NONE"),
+            ("Record area", "recording.area", "NONE")
         };
 
-        var rows = shortcuts.Select(item => ShortcutRow(item.Item1, item.Item2, "NONE")).ToArray();
+        var rows = shortcuts.Select(item => ShortcutRow(item.Item1, item.Item2, item.Item3)).ToArray();
         var card = Card(WithSeparators(rows).ToArray());
         card.Margin = new Thickness(-4, -3.5, -4, 0);
         if (rows[0] is Grid firstRow)
             firstRow.Margin = new Thickness(16, 7.5, 16, 4);
-        return PageWithHeader(PageHeader("Shortcuts", "Configure system-wide keyboard shortcuts to control Cap."), card);
+        var description = OperatingSystem.IsMacOS()
+            ? "Configure system-wide keyboard shortcuts to control Cap."
+            : "Configure keyboard shortcuts to control Cap while the app is focused.";
+        return PageWithHeader(PageHeader("Shortcuts", description), card);
     }
 
     private static Control BuildCliPage()
@@ -110,7 +105,7 @@ internal static class SettingsPageFactory
         var commandPath = Path.Combine(installDirectory, "cap");
         var targetPath = Path.Combine(AppContext.BaseDirectory, "cap-cli");
         var status = Label("Not installed", 13, TextBrush);
-        var description = Label("The desktop app installs a local cap command that points back to the bundled CLI.", 12, MutedBrush, wrap: true);
+        var description = Label("The Cap CLI is not included in this Avalonia build.", 12, MutedBrush, wrap: true);
         description.MaxWidth = 390;
         description.LineHeight = 16;
         var install = ActionButton("Install CLI", primary: true);
@@ -119,7 +114,8 @@ internal static class SettingsPageFactory
         install.Padding = new Thickness(12, 0);
         install.CornerRadius = new CornerRadius(15);
         install.VerticalAlignment = VerticalAlignment.Top;
-        install.Click += (_, _) => ToolTip.SetTip(install, "CLI installation is not available in this Avalonia build.");
+        install.IsEnabled = false;
+        ToolTip.SetTip(install, "The Cap CLI is not included in this Avalonia build.");
 
         var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
         var text = new StackPanel { Spacing = 6 };
@@ -803,7 +799,8 @@ internal static class SettingsPageFactory
         var checking = ActionButton("Refresh plan", primary: false);
         checking.Height = 28;
         checking.HorizontalAlignment = HorizontalAlignment.Left;
-        checking.Click += (_, _) => ToolTip.SetTip(checking, "Plan refresh is not connected in this Avalonia build.");
+        checking.IsEnabled = false;
+        ToolTip.SetTip(checking, "Online plan refresh is not connected in this local build.");
         planContent.Children.Add(checking);
         var planCard = Card(planContent);
         planCard.MinHeight = 144;
@@ -880,7 +877,7 @@ internal static class SettingsPageFactory
     {
         var message = new TextBox
         {
-            PlaceholderText = "Tell us what you think about Cap...",
+            PlaceholderText = "Online feedback is not connected in this local build.",
             AcceptsReturn = true,
             Height = 128,
             MinHeight = 128,
@@ -891,7 +888,8 @@ internal static class SettingsPageFactory
             Background = Brush("#1A1A1A"),
             BorderBrush = Brush("#303030"),
             CornerRadius = new CornerRadius(6),
-            Margin = new Thickness(-4, 0, -6.5, 0)
+            Margin = new Thickness(-4, 0, -6.5, 0),
+            IsEnabled = false
         };
         var submit = ActionButton("Submit Feedback", primary: false);
         submit.IsEnabled = false;
@@ -922,15 +920,6 @@ internal static class SettingsPageFactory
         submit.HorizontalAlignment = HorizontalAlignment.Stretch;
         submit.VerticalAlignment = VerticalAlignment.Stretch;
         submitButtonHost.Children.Add(submit);
-        message.TextChanged += (_, _) =>
-        {
-            var enabled = (message.Text?.Trim().Length ?? 0) >= 4;
-            submit.IsEnabled = enabled;
-            submitFace.Background = Brush(enabled ? "#2A2A2A" : "#1C1C1C");
-            submitFace.BorderBrush = Brush(enabled ? "#3A3A3A" : "#303030");
-            if (submitFace.Child is TextBlock text)
-                text.Foreground = enabled ? TextBrush : Brush("#777777");
-        };
         var feedbackForm = new StackPanel { Spacing = 12.5 };
         feedbackForm.Children.Add(message);
         feedbackForm.Children.Add(submitButtonHost);
@@ -949,7 +938,7 @@ internal static class SettingsPageFactory
             communitySpacingPanel.Spacing = 2;
         community.Margin = new Thickness(0, 2.5, 0, 0);
 
-        var warningText = "The sync test takes over your screen with a flashing pattern and plays loud beeps for about 20 seconds per pipeline. Take your headphones off and leave the volume audible (the microphone test needs to hear the beeps through your speakers), and don't use the machine until it finishes.";
+        var warningText = "The audio/video sync diagnostic is not included in this local build. Screen capture permission and FFmpeg availability are shown in System Information below.";
         var warningContent = new Grid { ColumnDefinitions = new ColumnDefinitions("14,*"), ColumnSpacing = 10, VerticalAlignment = VerticalAlignment.Top };
         warningContent.Children.Add(new Avalonia.Controls.Shapes.Path
         {
@@ -979,9 +968,11 @@ internal static class SettingsPageFactory
 
         var pipelines = Select(new[] { "Studio and Instant", "Studio", "Instant" });
         pipelines.Width = 146;
+        pipelines.IsEnabled = false;
         var duration = Select(new[] { "20 seconds", "10 seconds", "30 seconds" });
         duration.Width = 110;
-        var microphone = new ToggleSwitch { IsChecked = false, Width = 35, OnContent = string.Empty, OffContent = string.Empty };
+        duration.IsEnabled = false;
+        var microphone = new ToggleSwitch { IsChecked = false, Width = 35, OnContent = string.Empty, OffContent = string.Empty, IsEnabled = false };
         var diagnosticOptions = Card(
             SettingRow("Pipelines to test", "Studio recordings, Instant recordings, or both in one run.", pipelines, 46),
             new Border { Height = 1, Background = Brush("#303030") },
@@ -993,13 +984,14 @@ internal static class SettingsPageFactory
         runDiagnostic.Padding = new Thickness(12, 0);
         runDiagnostic.Height = 38;
         runDiagnostic.HorizontalAlignment = HorizontalAlignment.Left;
-        runDiagnostic.Click += (_, _) => ToolTip.SetTip(runDiagnostic, "Diagnostics are not connected in this Avalonia build.");
+        runDiagnostic.IsEnabled = false;
+        ToolTip.SetTip(runDiagnostic, "The audio/video diagnostic is not connected in this local build.");
         var diagnosticContent = new StackPanel { Spacing = 10 };
         diagnosticContent.Children.Add(warning);
         diagnosticContent.Children.Add(diagnosticOptions);
         diagnosticContent.Children.Add(runDiagnostic);
         var diagnostics = Section("Diagnostic Report",
-            "Runs an audio/video sync test and collects your hardware, displays, cameras, microphones, Cap settings, details of your recent recordings and a copy of Cap's log file, so we can reproduce your setup instead of guessing at it. You can read the whole report before sending it.",
+            "The audio/video sync test and diagnostic report are not connected in this local build.",
             diagnosticContent);
         if (diagnostics is StackPanel diagnosticsPanel && diagnosticsPanel.Children.Count > 1 && diagnosticsPanel.Children[1] is TextBlock diagnosticsDescription)
             diagnosticsDescription.LineHeight = 19.5;
@@ -1016,13 +1008,16 @@ internal static class SettingsPageFactory
         uploadLogs.Padding = new Thickness(12, 0);
         uploadLogs.Height = 38;
         uploadLogs.HorizontalAlignment = HorizontalAlignment.Left;
-        uploadLogs.Click += (_, _) => ToolTip.SetTip(uploadLogs, "Log upload is not connected in this Avalonia build.");
+        uploadLogs.IsEnabled = false;
+        ToolTip.SetTip(uploadLogs, "Log upload is not connected in this local build.");
         var debug = Section("Debug Information",
             "Upload Cap's log file to help us diagnose issues. It records what the app did, which can include file paths and the names of things you recorded.",
             uploadLogs);
         if (debug is StackPanel debugPanel && debugPanel.Children.Count > 1 && debugPanel.Children[1] is TextBlock debugDescription)
             debugDescription.LineHeight = 19.5;
 
+        var osName = OperatingSystem.IsMacOS() ? "macOS" : OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsLinux() ? "Linux" : "Unknown OS";
+        var osDescription = $"{osName} {Environment.OSVersion.Version} ({RuntimeInformation.ProcessArchitecture})";
         var osInfo = new StackPanel { Spacing = 4 };
         osInfo.Children.Add(Label("Operating System", 14, MutedBrush, weight: FontWeight.Medium));
         osInfo.Children.Add(new Border
@@ -1030,24 +1025,38 @@ internal static class SettingsPageFactory
             Padding = new Thickness(8, 6),
             Background = Brush("#1A1A1A"),
             CornerRadius = new CornerRadius(2),
-            Child = new TextBlock { Text = "macOS 26.7.1 (Apple Silicon)", FontSize = 12, FontFamily = "monospace", Foreground = MutedBrush }
+            Child = new TextBlock { Text = osDescription, FontSize = 12, FontFamily = "monospace", Foreground = MutedBrush }
         });
 
         var captureInfo = new StackPanel { Spacing = 4 };
         captureInfo.Children.Add(Label("Capture Support", 14, MutedBrush, weight: FontWeight.Medium));
+        var capturePermissionAvailable = OperatingSystem.IsMacOS() && MacScreenCaptureAccess.HasPermission;
+        var ffmpegAvailable = MediaLibraryService.IsFfmpegAvailable;
+        var captureStatus = !OperatingSystem.IsMacOS()
+            ? "Screen Capture: Platform support varies"
+            : capturePermissionAvailable
+                ? "Screen Capture: Permission granted"
+                : "Screen Capture: Permission required";
+        var captureStatusColor = capturePermissionAvailable ? "#4ADE80" : "#F6C453";
         captureInfo.Children.Add(new Border
         {
-            Padding = new Thickness(8, 4),
-            Background = Brush("#15321E"),
+            Padding = new Thickness(8, 6),
+            Background = Brush("#1A1A1A"),
             CornerRadius = new CornerRadius(4),
             HorizontalAlignment = HorizontalAlignment.Left,
-            Child = Label("Screen Capture: Supported", 12, Brush("#4ADE80"))
+            Child = new StackPanel { Spacing = 4, Children =
+            {
+                Label(captureStatus, 12, Brush(captureStatusColor)),
+                Label("FFmpeg: " + (ffmpegAvailable ? "Available" : "Not found"), 12, Brush(ffmpegAvailable ? "#4ADE80" : "#F6C453"))
+            }}
         });
 
         var encoderInfo = new StackPanel { Spacing = 4 };
         encoderInfo.Children.Add(Label("Available Encoders", 14, MutedBrush, weight: FontWeight.Medium));
         var encoders = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        foreach (var encoder in new[] { "h264_videotoolbox", "libx264", "hevc_videotoolbox", "libx265" })
+        var availableEncoders = MediaLibraryService.GetAvailableVideoEncoders();
+        foreach (var encoder in new[] { "h264_videotoolbox", "libx264", "hevc_videotoolbox", "libx265" }
+                     .Where(availableEncoders.Contains))
         {
             encoders.Children.Add(new Border
             {
@@ -1057,6 +1066,8 @@ internal static class SettingsPageFactory
                 Child = new TextBlock { Text = encoder, FontSize = 12, FontFamily = "monospace", Foreground = MutedBrush }
             });
         }
+        if (encoders.Children.Count == 0)
+            encoders.Children.Add(Label("No supported FFmpeg encoders detected", 12, MutedBrush));
         encoderInfo.Children.Add(encoders);
         var systemContent = new StackPanel { Spacing = 12 };
         systemContent.Children.Add(osInfo);
@@ -1066,7 +1077,7 @@ internal static class SettingsPageFactory
         systemContent.Margin = new Thickness(-4, 8, -6.5, 0);
 
         var page = new StackPanel { Spacing = 28 };
-        page.Children.Add(PageHeader("Feedback", "Help us improve Cap by submitting feedback or reporting bugs. We'll get right on it."));
+        page.Children.Add(PageHeader("Feedback", "Online feedback submission and log upload are not connected in this local build."));
         feedbackForm.Margin = new Thickness(0, -16, 0, 0);
         page.Children.Add(feedbackForm);
         page.Children.Add(community);
@@ -1225,28 +1236,18 @@ internal static class SettingsPageFactory
 
     private static Control ResolutionChoices()
     {
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*"), ColumnSpacing = 8, Margin = new Thickness(16, 2, 16, 4) };
-        var labels = new[] { ("720p", false), ("1080p", true), ("1440p", true), ("4K", true) };
-        for (var index = 0; index < labels.Length; index++)
+        var source = new Border
         {
-            var tile = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            tile.Children.Add(Label(labels[index].Item1, 12, index == 0 ? TextBrush : MutedBrush, align: HorizontalAlignment.Center));
-            if (labels[index].Item2)
-                tile.Children.Add(Label("Pro", 10, MutedBrush, align: HorizontalAlignment.Center));
-            var option = new Border
-            {
-                Height = 52,
-                Background = Brush(index == 0 ? "#0C2A49" : "#1A1A1A"),
-                BorderBrush = Brush(index == 0 ? "#1684FF" : "#303030"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(9),
-                Child = tile
-            };
-            ToolTip.SetTip(option, "Instant resolution selection is unavailable in this local-only build.");
-            Grid.SetColumn(option, index);
-            grid.Children.Add(option);
-        }
-        return grid;
+            MinHeight = 48,
+            Margin = new Thickness(16, 2, 16, 4),
+            Padding = new Thickness(12, 10),
+            Background = Brush("#0C2A49"),
+            BorderBrush = Brush("#1684FF"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            Child = Label("Source resolution", 12, TextBrush)
+        };
+        return source;
     }
 
     private static Control ChoiceList(string preferenceKey, params (string Label, string Badge, string Description)[] choices)
@@ -1384,6 +1385,7 @@ internal static class SettingsPageFactory
         button.Click += (_, _) =>
         {
             listening = true;
+            MacGlobalHotkeyService.SuspendCurrent();
             button.Content = "Press keys…";
             button.Focus();
         };
@@ -1396,6 +1398,22 @@ internal static class SettingsPageFactory
             {
                 listening = false;
                 button.Content = FormatShortcut(AppPreferencesStore.Get("shortcut." + key) ?? defaultValue);
+                RefreshGlobalHotkeys(button);
+                return;
+            }
+            if (e.Key is Avalonia.Input.Key.Back or Avalonia.Input.Key.Delete)
+            {
+                try
+                {
+                    AppPreferencesStore.Set("shortcut." + key, "NONE");
+                    button.Content = "NONE";
+                }
+                catch (Exception error)
+                {
+                    ToolTip.SetTip(button, error.Message);
+                }
+                listening = false;
+                RefreshGlobalHotkeys(button);
                 return;
             }
             var modifiers = e.KeyModifiers;
@@ -1437,10 +1455,16 @@ internal static class SettingsPageFactory
                 ToolTip.SetTip(button, error.Message);
             }
             listening = false;
+            RefreshGlobalHotkeys(button);
         };
         Grid.SetColumn(button, 1);
         row.Children.Add(button);
         return row;
+    }
+
+    private static void RefreshGlobalHotkeys(Control control)
+    {
+        ToolTip.SetTip(control, MacGlobalHotkeyService.RefreshCurrent());
     }
 
     private static string FormatShortcut(string shortcut)
@@ -1703,7 +1727,7 @@ internal static class SettingsPageFactory
         button.Padding = new Thickness(11, 0);
         button.FontSize = 12;
         ToolTip.SetTip(button, "Integrations are not connected in this Avalonia build.");
-        button.Click += (_, _) => ToolTip.SetTip(button, "Integrations are not connected in this Avalonia build.");
+        button.IsEnabled = false;
 
         var titleRow = new Grid { ColumnDefinitions = new ColumnDefinitions("16,*,Auto"), ColumnSpacing = 8 };
         titleRow.Children.Add(IntegrationIcon(name));

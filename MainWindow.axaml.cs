@@ -3,7 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,6 +35,7 @@ public partial class MainWindow : Window
     private bool _restoreRecorderAfterRecording;
     private bool _countdownInProgress;
     private bool _countdownCancelled;
+    private MacGlobalHotkeyService? _globalHotkeys;
 
     public MainWindow()
     {
@@ -45,9 +48,9 @@ public partial class MainWindow : Window
         _cameraDeviceIndex = int.TryParse(AppPreferencesStore.Get("capture.camera.index"), out var cameraIndex) ? cameraIndex : null;
         _microphoneDeviceIndex = int.TryParse(AppPreferencesStore.Get("capture.microphone.index"), out var microphoneIndex) ? microphoneIndex : null;
         _systemAudioDeviceIndex = int.TryParse(AppPreferencesStore.Get("capture.systemaudio.index"), out var systemAudioIndex) ? systemAudioIndex : null;
-        _cameraEnabled = AppPreferencesStore.Get("capture.camera.enabled") == "true";
-        _microphoneEnabled = AppPreferencesStore.Get("capture.microphone.enabled") == "true";
-        _systemAudioEnabled = AppPreferencesStore.Get("capture.systemaudio.enabled") == "true";
+        _cameraEnabled = AppPreferencesStore.Get("capture.camera.enabled") == "true" && _cameraDeviceIndex is not null;
+        _microphoneEnabled = AppPreferencesStore.Get("capture.microphone.enabled") == "true" && _microphoneDeviceIndex is not null;
+        _systemAudioEnabled = AppPreferencesStore.Get("capture.systemaudio.enabled") == "true" && _systemAudioDeviceIndex is not null;
         _captureArea = ReadCaptureArea();
         if (_captureArea is not null)
             _screenOrdinal = _captureArea.ScreenOrdinal;
@@ -73,6 +76,18 @@ public partial class MainWindow : Window
         ApplyModeVisuals();
         RefreshActivityIndicator(initializeReadState: true);
         AddHandler(KeyDownEvent, OnKeyboardShortcut, RoutingStrategies.Tunnel);
+        if (OperatingSystem.IsMacOS())
+        {
+            try
+            {
+                _globalHotkeys = new MacGlobalHotkeyService(action =>
+                    Dispatcher.UIThread.Post(() => _ = RunGlobalShortcutAsync(action)));
+            }
+            catch (Exception error)
+            {
+                ShowStatus("System-wide shortcuts could not be enabled: " + error.Message);
+            }
+        }
     }
 
     protected override void OnClosed(EventArgs e)
@@ -80,6 +95,7 @@ public partial class MainWindow : Window
         _recordingOverlayWindow?.Close();
         _recordingSession?.StopForShutdown();
         _recordingSession = null;
+        _globalHotkeys?.Dispose();
         base.OnClosed(e);
     }
 
@@ -106,7 +122,9 @@ public partial class MainWindow : Window
         ApplyModeVisuals();
     }
 
-    private async void OnCaptureButtonClick(object? sender, RoutedEventArgs e)
+    private async void OnCaptureButtonClick(object? sender, RoutedEventArgs e) => await OnCaptureButtonClickAsync();
+
+    private async Task OnCaptureButtonClickAsync()
     {
         if (_captureBusy)
             return;
@@ -127,7 +145,11 @@ public partial class MainWindow : Window
 
             if (_recordingSession is null)
             {
-                if (!_microphoneEnabled && AppPreferencesStore.Get("general.Confirm before recording without a microphone") != "false")
+                if (!await EnsureSelectedDevicesAvailableAsync())
+                    return;
+
+                var microphoneWillRecord = _microphoneEnabled && _microphoneDeviceIndex is not null;
+                if (!microphoneWillRecord && AppPreferencesStore.Get("general.Confirm before recording without a microphone") != "false")
                 {
                     var confirmation = new ConfirmCaptureWindow();
                     if (!await confirmation.ShowAndWaitAsync(this))
@@ -251,8 +273,19 @@ public partial class MainWindow : Window
 
     private void OnDisplayTargetClick(object? sender, RoutedEventArgs e)
     {
-        if (_recordingSession is not null) { ShowStatus("Stop the current recording before changing displays."); return; }
-        new ScreenPickerWindow(this, _screenOrdinal, (ordinal, bounds) =>
+        _ = SelectDisplayAsync();
+    }
+
+    private Task<bool> SelectDisplayAsync()
+    {
+        if (_recordingSession is not null)
+        {
+            ShowStatus("Stop the current recording before changing displays.");
+            return Task.FromResult(false);
+        }
+
+        var completion = new TaskCompletionSource<bool>();
+        var picker = new ScreenPickerWindow(this, _screenOrdinal, (ordinal, bounds) =>
         {
             _screenOrdinal = ordinal;
             _captureTargetKind = "Display";
@@ -270,21 +303,25 @@ public partial class MainWindow : Window
             }
             catch { }
             ShowStatus($"Display {ordinal + 1} selected.");
-        }).Show(this);
+            completion.TrySetResult(true);
+        });
+        picker.Closed += (_, _) => completion.TrySetResult(false);
+        picker.Show(this);
+        return completion.Task;
     }
 
     private async void OnWindowTargetClick(object? sender, RoutedEventArgs e) =>
-        await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window");
+        _ = await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window");
 
     private async void OnAreaTargetClick(object? sender, RoutedEventArgs e) =>
-        await SelectAreaAsync("Drag to select the area to capture", "Capture area selected.", "Area");
+        _ = await SelectAreaAsync("Drag to select the area to capture", "Capture area selected.", "Area");
 
-    private async Task SelectAreaAsync(string instruction, string resultMessage, string targetKind)
+    private async Task<bool> SelectAreaAsync(string instruction, string resultMessage, string targetKind)
     {
-        if (_recordingSession is not null) { ShowStatus("Stop the current recording before changing the capture area."); return; }
+        if (_recordingSession is not null) { ShowStatus("Stop the current recording before changing the capture area."); return false; }
         var area = await AreaSelectionWindow.SelectAsync(this, _screenOrdinal, instruction);
         if (area is null)
-            return;
+            return false;
         _captureArea = area;
         _screenOrdinal = area.ScreenOrdinal;
         _captureTargetKind = targetKind;
@@ -296,20 +333,37 @@ public partial class MainWindow : Window
         }
         catch { }
         ShowStatus(resultMessage);
+        return true;
     }
 
     private void OnCameraOnlyClick(object? sender, RoutedEventArgs e)
     {
-        _cameraOnly = !_cameraOnly;
-        if (_cameraOnly && _cameraDeviceIndex is null)
+        if (_cameraOnly)
         {
-            OnChooseCamera(sender, e);
-            ShowStatus("Choose a camera to start Camera Only capture.");
+            _cameraOnly = false;
+            ShowStatus("Display capture is selected.");
             return;
         }
-        if (_cameraOnly)
-            SetCameraEnabled(true);
-        ShowStatus(_cameraOnly ? "Camera Only capture is selected." : "Display capture is selected.");
+
+        if (_cameraDeviceIndex is null)
+        {
+            ChooseDevice("Camera", device =>
+            {
+                if (device is null)
+                {
+                    ShowStatus("Choose a camera to start Camera Only capture.");
+                    return;
+                }
+                _cameraOnly = true;
+                SetCameraEnabled(true);
+                ShowStatus("Camera Only capture is selected.");
+            });
+            return;
+        }
+
+        _cameraOnly = true;
+        SetCameraEnabled(true);
+        ShowStatus("Camera Only capture is selected.");
     }
 
     private void OnCameraAudioClick(object? sender, RoutedEventArgs e)
@@ -338,7 +392,7 @@ public partial class MainWindow : Window
     private void OnChooseMicrophone(object? sender, RoutedEventArgs e) => ChooseDevice("Microphone");
     private void OnChooseSystemAudio(object? sender, RoutedEventArgs e) => ChooseDevice("System Audio");
 
-    private void ChooseDevice(string kind)
+    private void ChooseDevice(string kind, Action<CaptureDevice?>? afterSelected = null)
     {
         var existingIndex = kind switch
         {
@@ -372,7 +426,74 @@ public partial class MainWindow : Window
                 SetSystemAudioEnabled(device is not null);
             }
             UpdateDeviceControls();
+            afterSelected?.Invoke(device);
         }).Show(this);
+    }
+
+    private async Task<bool> EnsureSelectedDevicesAvailableAsync()
+    {
+        if (!OperatingSystem.IsMacOS())
+            return true;
+
+        if (!_cameraEnabled && !_microphoneEnabled && !_systemAudioEnabled)
+            return true;
+
+        IReadOnlyList<CaptureDevice> available;
+        try
+        {
+            available = await MediaLibraryService.ListMacCaptureDevicesAsync();
+        }
+        catch (Exception error)
+        {
+            ShowStatus("Could not check the selected capture devices: " + error.Message);
+            return false;
+        }
+
+        if (_cameraEnabled && !IsStillAvailable(available, _cameraDeviceIndex, "Camera", "capture.camera.name"))
+        {
+            _cameraDeviceIndex = null;
+            _cameraOnly = false;
+            try { AppPreferencesStore.Set("capture.camera.index", string.Empty); } catch { }
+            try { AppPreferencesStore.Set("capture.camera.name", string.Empty); } catch { }
+            SetCameraEnabled(false);
+            ShowStatus("The selected camera is no longer available. Choose a connected camera.");
+            ChooseDevice("Camera");
+            return false;
+        }
+
+        if (_microphoneEnabled && !IsStillAvailable(available, _microphoneDeviceIndex, "Microphone", "capture.microphone.name"))
+        {
+            _microphoneDeviceIndex = null;
+            try { AppPreferencesStore.Set("capture.microphone.index", string.Empty); } catch { }
+            try { AppPreferencesStore.Set("capture.microphone.name", string.Empty); } catch { }
+            SetMicrophoneEnabled(false);
+            ShowStatus("The selected microphone is no longer available. Choose a connected microphone.");
+            ChooseDevice("Microphone");
+            return false;
+        }
+
+        if (_systemAudioEnabled && !IsStillAvailable(available, _systemAudioDeviceIndex, "Microphone", "capture.systemaudio.name"))
+        {
+            _systemAudioDeviceIndex = null;
+            try { AppPreferencesStore.Set("capture.systemaudio.index", string.Empty); } catch { }
+            try { AppPreferencesStore.Set("capture.systemaudio.name", string.Empty); } catch { }
+            SetSystemAudioEnabled(false);
+            ShowStatus("The selected loopback device is no longer available. Choose another device.");
+            ChooseDevice("System Audio");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsStillAvailable(IReadOnlyList<CaptureDevice> devices, int? index, string kind, string nameKey)
+    {
+        if (index is null)
+            return false;
+
+        var expectedName = AppPreferencesStore.Get(nameKey);
+        return devices.Any(device => device.Index == index && device.Kind == kind &&
+            (string.IsNullOrWhiteSpace(expectedName) || string.Equals(device.Name, expectedName, StringComparison.Ordinal)));
     }
 
     private void SetCameraEnabled(bool enabled)
@@ -560,7 +681,9 @@ public partial class MainWindow : Window
         if (!_restoreRecorderAfterRecording)
             return;
         _recordingOverlayWindow?.Close();
-        _recordingOverlayWindow = new RecordingOverlayWindow(this, () => OnCaptureButtonClick(RecordButton, new RoutedEventArgs()));
+        _recordingOverlayWindow = new RecordingOverlayWindow(this,
+            () => _ = OnCaptureButtonClickAsync(),
+            OnKeyboardShortcut);
         _recordingOverlayWindow.Closed += (_, _) => _recordingOverlayWindow = null;
         _recordingOverlayWindow.Show();
     }
@@ -614,7 +737,85 @@ public partial class MainWindow : Window
             ShowStatus("Recording countdown cancelled.");
             return;
         }
-        if (MatchesShortcut(e, "record", "Primary+R"))
+        if (MatchesShortcut(e, "recording.picker", "Primary+Shift+P"))
+        {
+            e.Handled = true;
+            OpenSettings("Recordings");
+        }
+        else if (MatchesShortcut(e, "recording.stop", "Primary+Alt+X"))
+        {
+            e.Handled = true;
+            if (_recordingSession is not null)
+                await OnCaptureButtonClickAsync();
+        }
+        else if (MatchesShortcut(e, "recording.pause", "Primary+Alt+P"))
+        {
+            e.Handled = true;
+            try
+            {
+                if (_recordingSession is null)
+                    ShowStatus("There is no recording to pause.");
+                else
+                    ShowStatus(_recordingSession.TogglePaused() ? "Recording paused." : "Recording resumed.");
+            }
+            catch (Exception error)
+            {
+                ShowStatus(error.Message);
+            }
+        }
+        else if (MatchesShortcut(e, "recording.restart", "Primary+Alt+R"))
+        {
+            e.Handled = true;
+            await RestartRecordingAsync();
+        }
+        else if (MatchesShortcut(e, "recording.cycle", "Primary+Alt+M"))
+        {
+            e.Handled = true;
+            if (_recordingSession is not null)
+                ShowStatus("Stop the current recording before changing mode.");
+            else
+            {
+                _selectedMode = _selectedMode switch { "Instant" => "Studio", "Studio" => "Screenshot", _ => "Instant" };
+                try { AppPreferencesStore.Set("recorder.mode", _selectedMode); } catch { }
+                ApplyModeVisuals();
+            }
+        }
+        else if (MatchesShortcut(e, "screenshot.display", "Primary+Shift+S"))
+        {
+            e.Handled = true;
+            await TakeShortcutScreenshotAsync(display: true);
+        }
+        else if (MatchesShortcut(e, "screenshot.window", "Primary+Shift+W"))
+        {
+            e.Handled = true;
+            if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+                await TakeShortcutScreenshotAsync(display: false);
+        }
+        else if (MatchesShortcut(e, "screenshot.area", "Primary+Shift+A"))
+        {
+            e.Handled = true;
+            if (await SelectAreaAsync("Drag to select the area to capture", "Capture area selected.", "Area"))
+                await TakeShortcutScreenshotAsync(display: false);
+        }
+        else if (MatchesShortcut(e, "recording.display", "Primary+Alt+D"))
+        {
+            e.Handled = true;
+            if (await SelectDisplayAsync())
+                await StartRecordingFromShortcutAsync();
+        }
+        else if (MatchesShortcut(e, "recording.window", "Primary+Alt+W"))
+        {
+            e.Handled = true;
+            if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+                await StartRecordingFromShortcutAsync();
+        }
+        else if (MatchesShortcut(e, "recording.area", "Primary+Alt+A"))
+        {
+            e.Handled = true;
+            if (await SelectAreaAsync("Drag to select the area to capture", "Capture area selected.", "Area"))
+                await StartRecordingFromShortcutAsync();
+        }
+        else if (MatchesShortcut(e, "record", "Primary+R"))
         {
             e.Handled = true;
             await OnCaptureButtonClickAsync();
@@ -622,18 +823,7 @@ public partial class MainWindow : Window
         else if (MatchesShortcut(e, "screenshot", "Primary+Shift+S"))
         {
             e.Handled = true;
-            try
-            {
-                var path = await TakeScreenshotAsync();
-                var backup = await ApplySaveAutomationAsync(path, screenshot: true);
-                ShowStatus($"Screenshot saved: {Path.GetFileName(path)}{backup}");
-                RefreshActivityIndicator();
-                _settingsWindow?.RefreshCurrentPage();
-            }
-            catch (Exception error)
-            {
-                ShowStatus(error.Message);
-            }
+            await TakeShortcutScreenshotAsync(display: false);
         }
         else if (MatchesShortcut(e, "mode.instant", "Primary+D1") ||
                  MatchesShortcut(e, "mode.studio", "Primary+D2") ||
@@ -652,9 +842,144 @@ public partial class MainWindow : Window
         }
     }
 
+    private async Task RunGlobalShortcutAsync(string action)
+    {
+        switch (action)
+        {
+            case "recording.picker":
+                OpenSettings("Recordings");
+                break;
+            case "recording.stop":
+                if (_recordingSession is not null)
+                    await OnCaptureButtonClickAsync();
+                break;
+            case "recording.pause":
+                try
+                {
+                    if (_recordingSession is null)
+                        ShowStatus("There is no recording to pause.");
+                    else
+                        ShowStatus(_recordingSession.TogglePaused() ? "Recording paused." : "Recording resumed.");
+                }
+                catch (Exception error)
+                {
+                    ShowStatus(error.Message);
+                }
+                break;
+            case "recording.restart":
+                await RestartRecordingAsync();
+                break;
+            case "recording.cycle":
+                if (_recordingSession is not null)
+                    ShowStatus("Stop the current recording before changing mode.");
+                else
+                {
+                    _selectedMode = _selectedMode switch { "Instant" => "Studio", "Studio" => "Screenshot", _ => "Instant" };
+                    try { AppPreferencesStore.Set("recorder.mode", _selectedMode); } catch { }
+                    ApplyModeVisuals();
+                }
+                break;
+            case "screenshot.display":
+                await TakeShortcutScreenshotAsync(display: true);
+                break;
+            case "screenshot.window":
+                if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+                    await TakeShortcutScreenshotAsync(display: false);
+                break;
+            case "screenshot.area":
+                if (await SelectAreaAsync("Drag to select the area to capture", "Capture area selected.", "Area"))
+                    await TakeShortcutScreenshotAsync(display: false);
+                break;
+            case "recording.display":
+                if (await SelectDisplayAsync())
+                    await StartRecordingFromShortcutAsync();
+                break;
+            case "recording.window":
+                if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+                    await StartRecordingFromShortcutAsync();
+                break;
+            case "recording.area":
+                if (await SelectAreaAsync("Drag to select the area to capture", "Capture area selected.", "Area"))
+                    await StartRecordingFromShortcutAsync();
+                break;
+        }
+    }
+
+    private async Task TakeShortcutScreenshotAsync(bool display)
+    {
+        var previousArea = _captureArea;
+        if (display)
+            _captureArea = null;
+        try
+        {
+            var path = await TakeScreenshotAsync();
+            var backup = await ApplySaveAutomationAsync(path, screenshot: true);
+            ShowStatus($"Screenshot saved: {Path.GetFileName(path)}{backup}");
+            RefreshActivityIndicator();
+            _settingsWindow?.RefreshCurrentPage();
+        }
+        catch (Exception error)
+        {
+            ShowStatus(error.Message);
+        }
+        finally
+        {
+            if (display)
+                _captureArea = previousArea;
+        }
+    }
+
+    private async Task StartRecordingFromShortcutAsync()
+    {
+        if (_recordingSession is not null)
+        {
+            ShowStatus("Stop the current recording before starting another.");
+            return;
+        }
+
+        _selectedMode = "Studio";
+        try { AppPreferencesStore.Set("recorder.mode", _selectedMode); } catch { }
+        ApplyModeVisuals();
+        await OnCaptureButtonClickAsync();
+    }
+
+    private async Task RestartRecordingAsync()
+    {
+        if (_recordingSession is null)
+        {
+            ShowStatus("There is no recording to restart.");
+            return;
+        }
+
+        try
+        {
+            var oldSession = _recordingSession;
+            var previousPath = await oldSession.StopAsync();
+            _recordingSession = null;
+            try { AppPreferencesStore.Set("recording.mode." + previousPath, _selectedMode); } catch { }
+            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F2F2F2"));
+            ToolTip.SetTip(RecordButton, "Start recording");
+            _recordingOverlayWindow?.Close();
+            _recordingOverlayWindow = null;
+            RestoreRecorderWindow();
+            ShowStatus("Previous recording saved. Starting a new recording…");
+            await OnCaptureButtonClickAsync();
+        }
+        catch (Exception error)
+        {
+            _recordingSession = null;
+            _recordingOverlayWindow?.Close();
+            _recordingOverlayWindow = null;
+            RestoreRecorderWindow();
+            ShowStatus("Could not restart recording: " + error.Message);
+        }
+    }
+
     private static bool MatchesShortcut(KeyEventArgs e, string name, string fallback)
     {
-        var configured = AppPreferencesStore.Get("shortcut." + name) ?? fallback;
+        var configured = AppPreferencesStore.Get("shortcut." + name);
+        if (string.IsNullOrWhiteSpace(configured))
+            return false;
         var parts = configured.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length == 0)
             return false;
@@ -685,12 +1010,6 @@ public partial class MainWindow : Window
 
         const KeyModifiers relevant = KeyModifiers.Control | KeyModifiers.Meta | KeyModifiers.Shift | KeyModifiers.Alt;
         return (e.KeyModifiers & relevant) == expected;
-    }
-
-    private Task OnCaptureButtonClickAsync()
-    {
-        OnCaptureButtonClick(null, new RoutedEventArgs());
-        return Task.CompletedTask;
     }
 
     private async Task HideStatusLaterAsync(int generation)
