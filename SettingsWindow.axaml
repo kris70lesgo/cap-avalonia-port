@@ -26,9 +26,47 @@
     <StreamGeometry x:Key="FeedbackIcon">M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z M12 8v6 M9 11h6</StreamGeometry>
     <StreamGeometry x:Key="BellIcon">M10.268 21a2 2 0 0 0 3.464 0 M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326</StreamGeometry>
     <StreamGeometry x:Key="AccountIcon">M12 3a5 5 0 1 0 0 10a5 5 0 0 0 0-10Z M20 21a8 8 0 0 0-16 0</StreamGeometry>
+    <ControlTheme x:Key="CapSettingsToggleSwitch" TargetType="ToggleSwitch" BasedOn="{StaticResource {x:Type ToggleSwitch}}">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid Background="{TemplateBinding Background}" RowDefinitions="Auto,*">
+            <ContentPresenter x:Name="PART_ContentPresenter" Grid.Row="0" VerticalAlignment="Top" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Margin="{DynamicResource ToggleSwitchTopHeaderMargin}" />
+            <Grid Grid.Row="1" MinWidth="{DynamicResource ToggleSwitchThemeMinWidth}" HorizontalAlignment="Left" VerticalAlignment="Top">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="{DynamicResource ToggleSwitchPreContentMargin}" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="{DynamicResource ToggleSwitchPostContentMargin}" />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="12" MaxWidth="12" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <Grid x:Name="SwitchAreaGrid" Grid.RowSpan="3" Grid.ColumnSpan="3" Background="{DynamicResource ToggleSwitchContainerBackground}" Margin="0,5" TemplatedControl.IsTemplateFocusTarget="True" />
+              <ContentPresenter x:Name="PART_OffContentPresenter" Grid.RowSpan="3" Grid.Column="2" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Content="{TemplateBinding OffContent}" ContentTemplate="{TemplateBinding OffContentTemplate}" />
+              <ContentPresenter x:Name="PART_OnContentPresenter" Grid.RowSpan="3" Grid.Column="2" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Content="{TemplateBinding OnContent}" ContentTemplate="{TemplateBinding OnContentTemplate}" />
+              <Border x:Name="OuterBorder" Grid.Row="1" Width="36" Height="20" Background="{DynamicResource ToggleSwitchFillOff}" BorderBrush="{DynamicResource ToggleSwitchStrokeOff}" BorderThickness="{DynamicResource ToggleSwitchOuterBorderStrokeThickness}" CornerRadius="10" />
+              <Border x:Name="SwitchKnobBounds" Grid.Row="1" Width="36" Height="20" Background="{DynamicResource ToggleSwitchFillOn}" BorderBrush="{DynamicResource ToggleSwitchStrokeOn}" BorderThickness="{DynamicResource ToggleSwitchOnStrokeThickness}" CornerRadius="10" />
+              <Canvas x:Name="PART_SwitchKnob" Grid.Row="1" Width="16" Height="20" HorizontalAlignment="Left">
+                <Grid x:Name="PART_MovingKnobs" Width="20" Height="20">
+                  <Ellipse x:Name="SwitchKnobOn" Fill="{DynamicResource ToggleSwitchKnobFillOn}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <Ellipse x:Name="SwitchKnobOff" Fill="{DynamicResource ToggleSwitchKnobFillOff}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+              </Canvas>
+            </Grid>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
   </Window.Resources>
 
   <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="FontWeight" Value="Regular" />
+    </Style>
+    <Style Selector="ToggleSwitch">
+      <Setter Property="Theme" Value="{StaticResource CapSettingsToggleSwitch}" />
+    </Style>
     <Style Selector="Button.nav">
       <Setter Property="Height" Value="32" />
       <Setter Property="Padding" Value="8,0" />
@@ -172,12 +210,12 @@
             <StackPanel>
               <Grid MinHeight="47" ColumnDefinitions="*,Auto" Margin="12,8,12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Always show dock icon" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Keep Cap in the dock even when no windows are open." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" Tag="Always show dock icon" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" Tag="Always show dock icon" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="62" ColumnDefinitions="*,Auto" Margin="12,8,12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="System notifications" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Show notifications for clipboard copies, saved files, and more. You may need to allow Cap in your system's notification settings." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" Tag="System notifications" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" Tag="System notifications" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
             </StackPanel>
           </Border>
@@ -197,12 +235,12 @@
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Confirm before recording without a microphone" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Require confirmation when no microphone is selected or the selected microphone is unavailable." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Studio Sound on new recordings" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Clean up microphone audio automatically. You can still turn it off for any recording in the editor." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
@@ -222,22 +260,22 @@
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Delete Instant recordings after upload" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Cap removes the local file once it has uploaded successfully." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Upload and delete behavior is unavailable in this local-only build." />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Upload and delete behavior is unavailable in this local-only build." />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Crash-recoverable recording" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Record in fragments that can be recovered after a crash or power loss. Slightly larger files during capture." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Custom cursor capture (Studio)" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Capture cursor state separately so you can adjust size and smoothing in the editor." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" Tag="Custom cursor capture (Studio)" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" Tag="Custom cursor capture (Studio)" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Auto zoom on clicks" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Automatically add zoom segments around mouse clicks in Studio recordings." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Click tracking is not available in this build." />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="Click tracking is not available in this build." />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
@@ -247,12 +285,12 @@
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Capture keyboard presses" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Record key presses so you can add keyboard overlays in the editor." FontSize="12" Foreground="#A0A0A0"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" Tag="Capture keyboard presses" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" Tag="Capture keyboard presses" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
                 <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Draw the MacBook notch on screen recordings" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="Automatically restores the notch for new screen and area recordings when the selected region contains the complete notch. External displays, partial areas, and window recordings are left alone. Each recording can override it in the editor." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-                <ToggleSwitch Grid.Column="1" Tag="Draw the MacBook notch on screen recordings" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
+                <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" Tag="Draw the MacBook notch on screen recordings" IsChecked="True" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" />
               </Grid>
               <Border Height="1" Background="#2A2A2A" />
               <Grid MinHeight="46" ColumnDefinitions="*,Auto" Margin="12,8">
@@ -325,7 +363,7 @@
           <Border Margin="-4,8,-4,0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10">
             <Grid MinHeight="74" ColumnDefinitions="*,Auto" Margin="12,8">
               <StackPanel Spacing="3" VerticalAlignment="Center"><TextBlock Text="Share anonymous telemetry" FontSize="13" Foreground="#F1F1F1"/><TextBlock Text="This app does not collect or send telemetry." FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap"/></StackPanel>
-              <ToggleSwitch Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="This app does not send telemetry." />
+              <ToggleSwitch Theme="{StaticResource CapSettingsToggleSwitch}" Grid.Column="1" IsChecked="False" OnContent="" OffContent="" Width="36" VerticalAlignment="Center" Margin="12,0,0,0" IsEnabled="False" ToolTip.Tip="This app does not send telemetry." />
             </Grid>
           </Border>
         </StackPanel>

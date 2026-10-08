@@ -158,7 +158,7 @@ public partial class MainWindow : Window
             var pathWhenStopped = await session.StopAsync();
             _recordingSession = null;
             try { AppPreferencesStore.Set("recording.mode." + pathWhenStopped, _selectedMode); } catch { }
-            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F04444"));
+            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F2F2F2"));
             ToolTip.SetTip(RecordButton, "Start recording");
             var backupPath = await ApplySaveAutomationAsync(pathWhenStopped, screenshot: false);
             ShowStatus($"Recording saved: {Path.GetFileName(pathWhenStopped)}{backupPath}");
@@ -182,7 +182,7 @@ public partial class MainWindow : Window
         catch (Exception error)
         {
             _recordingSession = null;
-            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F04444"));
+            RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F2F2F2"));
             _recordingOverlayWindow?.Close();
             _recordingOverlayWindow = null;
             RestoreRecorderWindow();
@@ -715,13 +715,13 @@ public partial class MainWindow : Window
             if (!button.Classes.Contains("selected"))
                 button.Classes.Add("selected");
             frame.Background = new SolidColorBrush(Color.Parse("#292929"));
-            frame.BorderBrush = new SolidColorBrush(Color.Parse("#3885FF"));
-            frame.BorderThickness = new Thickness(2);
+            frame.BorderBrush = new SolidColorBrush(Color.Parse("#3B82F6"));
+            frame.BorderThickness = new Thickness(2.5);
         }
         else
         {
             button.Classes.Remove("selected");
-            frame.Background = Brushes.Transparent;
+            frame.Background = new SolidColorBrush(Color.Parse("#363636"));
             frame.BorderBrush = Brushes.Transparent;
             frame.BorderThickness = new Thickness(0);
         }
