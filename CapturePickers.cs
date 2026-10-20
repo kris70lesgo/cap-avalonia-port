@@ -88,9 +88,10 @@ internal sealed class CaptureDevicePickerWindow : Window
         {
             try
             {
-                var availableDevices = await MediaLibraryService.ListMacCaptureDevicesAsync();
+                var availableDevices = await MediaLibraryService.ListCaptureDevicesAsync();
                 var devices = kind == "System Audio"
-                    ? availableDevices.Where(device => device.Kind == "Microphone" && IsLikelyLoopbackDevice(device.Name)).ToArray()
+                    ? availableDevices.Where(device => device.Kind == "System Audio" ||
+                        (OperatingSystem.IsMacOS() && device.Kind == "Microphone" && IsLikelyLoopbackDevice(device.Name))).ToArray()
                     : availableDevices.Where(device => device.Kind == kind).ToArray();
                 list.Children.Add(DeviceButton("Off", selectedIndex is null, () => { selected(null); Close(); }));
                 foreach (var device in devices)
@@ -100,11 +101,13 @@ internal sealed class CaptureDevicePickerWindow : Window
                 }
                 status.Text = devices.Length == 0
                     ? kind == "System Audio"
-                        ? "No loopback devices were detected. macOS needs an audio loopback device, such as BlackHole, for system sound capture."
+                        ? OperatingSystem.IsMacOS()
+                            ? "No loopback devices were detected. macOS needs an audio loopback device, such as BlackHole, for system sound capture."
+                            : "No system-audio source was detected. Configure a loopback or monitor source in your audio system, then reopen this list."
                         : $"No {kind.ToLowerInvariant()} devices were detected. Connect a device, then reopen this list."
                     : kind == "System Audio"
                         ? "Select an installed loopback device that receives system output audio."
-                        : "These devices are detected by FFmpeg on this Mac.";
+                        : $"These devices are detected by FFmpeg on { (OperatingSystem.IsMacOS() ? "this Mac" : OperatingSystem.IsWindows() ? "Windows" : "Linux") }.";
             }
             catch (Exception error)
             {

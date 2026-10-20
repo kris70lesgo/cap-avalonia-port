@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace CapAvalonia;
 
 internal sealed record MediaLibraryItem(string Path, string Name, long Size, DateTime Modified, string Mode);
-internal sealed record CaptureDevice(int Index, string Name, string Kind);
+internal sealed record CaptureDevice(int Index, string Name, string Kind, string? DeviceId = null);
 internal sealed record CaptureArea(int ScreenOrdinal, int X, int Y, int Width, int Height, int ScreenOriginX = 0, int ScreenOriginY = 0);
 
 internal static class MediaLibraryService
@@ -138,7 +138,8 @@ internal static class MediaLibraryService
         return imported;
     }
 
-    public static async Task<string> CaptureScreenshotAsync(CaptureArea? area = null, int screenOrdinal = 0)
+    public static async Task<string> CaptureScreenshotAsync(CaptureArea? area = null, int screenOrdinal = 0,
+        CaptureWindowTarget? windowTarget = null)
     {
         MacScreenCaptureAccess.EnsureAvailable();
         Directory.CreateDirectory(ScreenshotsDirectory);
@@ -152,7 +153,7 @@ internal static class MediaLibraryService
         }
 
         var ffmpeg = FindFfmpeg();
-        var startInfo = await BuildCaptureStartInfoAsync(ffmpeg, path, screenshot: true, screenOrdinal: screenOrdinal, area: area);
+        var startInfo = await BuildCaptureStartInfoAsync(ffmpeg, path, screenshot: true, screenOrdinal: screenOrdinal, area: area, windowTarget: windowTarget);
         await RunAndCheckAsync(startInfo, TimeSpan.FromSeconds(30));
         EnsureCaptureFile(path, "screenshot");
         return path;
@@ -161,7 +162,7 @@ internal static class MediaLibraryService
     public static async Task<ActiveRecordingSession> StartRecordingAsync(int frameRate = 30, string quality = "Balanced",
         int? microphoneIndex = null, int? systemAudioIndex = null, int? cameraIndex = null, bool cameraOnly = false,
         int screenOrdinal = 0, CaptureArea? area = null, string? nameTemplate = null, string? recordingMode = null,
-        string? targetKind = null)
+        string? targetKind = null, CaptureWindowTarget? windowTarget = null)
     {
         if (!cameraOnly)
             MacScreenCaptureAccess.EnsureAvailable();
@@ -169,7 +170,7 @@ internal static class MediaLibraryService
         var baseName = BuildRecordingName(nameTemplate, recordingMode ?? "Studio", cameraOnly, area, targetKind);
         var path = UniqueDestination(RecordingsDirectory, baseName + ".mp4");
         var startInfo = await BuildCaptureStartInfoAsync(FindFfmpeg(), path, screenshot: false, frameRate, quality,
-            microphoneIndex, systemAudioIndex, cameraIndex, cameraOnly, screenOrdinal, area);
+            microphoneIndex, systemAudioIndex, cameraIndex, cameraOnly, screenOrdinal, area, windowTarget);
         startInfo.ArgumentList.Insert(3, "-progress");
         startInfo.ArgumentList.Insert(4, "pipe:1");
         startInfo.ArgumentList.Insert(5, "-nostats");
@@ -241,6 +242,51 @@ internal static class MediaLibraryService
     public static void OpenFile(string path)
     {
         Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+    }
+
+    public static string RenameMedia(string path, string newBaseName)
+    {
+        var fullPath = Path.GetFullPath(path);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException("This media file no longer exists.", fullPath);
+        var cleanedName = newBaseName.Trim();
+        if (string.IsNullOrWhiteSpace(cleanedName) || cleanedName is "." or ".." ||
+            cleanedName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || cleanedName.Contains('/') || cleanedName.Contains('\\'))
+            throw new ArgumentException("Enter a valid file name.", nameof(newBaseName));
+
+        var directory = Path.GetDirectoryName(fullPath)!;
+        var extension = Path.GetExtension(fullPath);
+        var destination = Path.Combine(directory, cleanedName + extension);
+        if (string.Equals(fullPath, destination, OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+            return fullPath;
+        if (File.Exists(destination))
+            throw new IOException("A file with that name already exists in this library.");
+
+        var mode = AppPreferencesStore.Get("recording.mode." + fullPath);
+        var trimStart = AppPreferencesStore.Get("trim.start." + fullPath);
+        var trimEnd = AppPreferencesStore.Get("trim.end." + fullPath);
+        File.Move(fullPath, destination);
+        try
+        {
+            if (mode is not null)
+            {
+                AppPreferencesStore.Set("recording.mode." + destination, mode);
+                AppPreferencesStore.Remove("recording.mode." + fullPath);
+            }
+            if (trimStart is not null)
+            {
+                AppPreferencesStore.Set("trim.start." + destination, trimStart);
+                AppPreferencesStore.Remove("trim.start." + fullPath);
+            }
+            if (trimEnd is not null)
+            {
+                AppPreferencesStore.Set("trim.end." + destination, trimEnd);
+                AppPreferencesStore.Remove("trim.end." + fullPath);
+            }
+        }
+        catch { /* The media file rename succeeds independently of optional metadata persistence. */ }
+        return destination;
     }
 
     public static void OpenDirectory(string path)
@@ -363,6 +409,145 @@ internal static class MediaLibraryService
         return devices;
     }
 
+    public static Task<IReadOnlyList<CaptureDevice>> ListCaptureDevicesAsync() => OperatingSystem.IsMacOS()
+        ? ListMacCaptureDevicesAsync()
+        : OperatingSystem.IsWindows()
+            ? ListWindowsCaptureDevicesAsync()
+            : OperatingSystem.IsLinux()
+                ? ListLinuxCaptureDevicesAsync()
+                : Task.FromException<IReadOnlyList<CaptureDevice>>(new PlatformNotSupportedException("Capture device discovery is not supported on this platform."));
+
+    private static async Task<IReadOnlyList<CaptureDevice>> ListWindowsCaptureDevicesAsync()
+    {
+        var startInfo = new ProcessStartInfo(FindFfmpeg())
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+        foreach (var argument in new[] { "-hide_banner", "-list_devices", "true", "-f", "dshow", "-i", "dummy" })
+            startInfo.ArgumentList.Add(argument);
+        var output = await ReadProcessDiagnosticsAsync(startInfo, TimeSpan.FromSeconds(15));
+        var devices = new List<CaptureDevice>();
+        var section = "";
+        foreach (var line in output.Split('\n'))
+        {
+            if (line.Contains("DirectShow video devices", StringComparison.OrdinalIgnoreCase))
+            {
+                section = "video";
+                continue;
+            }
+            if (line.Contains("DirectShow audio devices", StringComparison.OrdinalIgnoreCase))
+            {
+                section = "audio";
+                continue;
+            }
+            if (section.Length == 0 || line.Contains("Alternative name", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var match = Regex.Match(line, "\\\"(?<name>.+?)\\\"\\s*$");
+            if (!match.Success)
+                continue;
+            var name = match.Groups["name"].Value.Trim();
+            var kind = section == "video" ? "Camera" : IsLikelySystemAudioSource(name) ? "System Audio" : "Microphone";
+            devices.Add(new CaptureDevice(devices.Count(device => device.Kind == kind), name, kind, name));
+        }
+        return devices;
+    }
+
+    private static async Task<IReadOnlyList<CaptureDevice>> ListLinuxCaptureDevicesAsync()
+    {
+        var devices = new List<CaptureDevice>();
+        var videoDirectory = "/dev";
+        if (Directory.Exists(videoDirectory))
+        {
+            foreach (var path in Directory.GetFiles(videoDirectory, "video*").OrderBy(value => value, StringComparer.Ordinal))
+            {
+                var sysfsName = Path.Combine("/sys/class/video4linux", Path.GetFileName(path), "name");
+                var name = File.Exists(sysfsName) ? (await File.ReadAllTextAsync(sysfsName)).Trim() : Path.GetFileName(path);
+                devices.Add(new CaptureDevice(devices.Count(device => device.Kind == "Camera"), name, "Camera", path));
+            }
+        }
+
+        var pactlPath = FindOnPath("pactl");
+        if (pactlPath is not null)
+        {
+            try
+            {
+                var pactl = new ProcessStartInfo(pactlPath)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
+                };
+                pactl.ArgumentList.Add("list");
+                pactl.ArgumentList.Add("short");
+                pactl.ArgumentList.Add("sources");
+                var listedSources = await ReadProcessDiagnosticsAsync(pactl, TimeSpan.FromSeconds(15));
+                foreach (var line in listedSources.Split('\n'))
+                {
+                    var columns = Regex.Split(line.Trim(), @"\s+");
+                    if (columns.Length < 2 || !int.TryParse(columns[0], out _))
+                        continue;
+                    var id = columns[1];
+                    var kind = IsLikelySystemAudioSource(id) ? "System Audio" : "Microphone";
+                    devices.Add(new CaptureDevice(devices.Count(device => device.Kind == kind), id, kind, id));
+                }
+                if (devices.Any(device => device.Kind is "Microphone" or "System Audio"))
+                    return devices;
+            }
+            catch
+            {
+                // Fall back to FFmpeg's own source listing when PulseAudio is unavailable.
+            }
+        }
+
+        var pulse = new ProcessStartInfo(FindFfmpeg())
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+        foreach (var argument in new[] { "-hide_banner", "-sources", "pulse" })
+            pulse.ArgumentList.Add(argument);
+        var sources = await ReadProcessDiagnosticsAsync(pulse, TimeSpan.FromSeconds(15));
+        foreach (var line in sources.Split('\n'))
+        {
+            var match = Regex.Match(line, @"^\s*(?<id>[^\s\[\]]+)(?:\s+\[(?<name>.+?)\])?\s*$");
+            if (!match.Success || match.Groups["id"].Value.Contains(':'))
+                continue;
+            var id = match.Groups["id"].Value;
+            var name = match.Groups["name"].Success ? match.Groups["name"].Value.Trim() : id;
+            var kind = IsLikelySystemAudioSource(id + " " + name) ? "System Audio" : "Microphone";
+            devices.Add(new CaptureDevice(devices.Count(device => device.Kind == kind), name, kind, id));
+        }
+        return devices;
+    }
+
+    private static bool IsLikelySystemAudioSource(string name)
+    {
+        var normalized = name.ToLowerInvariant();
+        return new[] { "monitor", "loopback", "stereo mix", "what u hear", "vb-cable", "virtual audio" }
+            .Any(marker => normalized.Contains(marker, StringComparison.Ordinal));
+    }
+
+    private static async Task<string> ReadProcessDiagnosticsAsync(ProcessStartInfo startInfo, TimeSpan timeout)
+    {
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not inspect capture devices.");
+        var errorTask = process.StandardError.ReadToEndAsync();
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var exitTask = process.WaitForExitAsync();
+        if (await Task.WhenAny(exitTask, Task.Delay(timeout)) != exitTask)
+        {
+            try { process.Kill(entireProcessTree: true); } catch { }
+            throw new TimeoutException("Capture device discovery timed out.");
+        }
+        await exitTask;
+        return (await errorTask) + Environment.NewLine + (await outputTask);
+    }
+
     public static async Task<string> CreateVideoThumbnailAsync(string path, double seconds)
     {
         var directory = Path.Combine(AppDataDirectory, "PreviewCache");
@@ -395,7 +580,7 @@ internal static class MediaLibraryService
         return thumbnail;
     }
 
-    public static async Task ExportTrimmedVideoAsync(string inputPath, string outputPath, double start, double end)
+    public static async Task ExportTrimmedVideoAsync(string inputPath, string outputPath, double start, double end, string quality = "Balanced")
     {
         if (end <= start)
             throw new ArgumentOutOfRangeException(nameof(end), "The end time must be after the start time.");
@@ -415,10 +600,16 @@ internal static class MediaLibraryService
             "-t", duration.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture),
             "-c:v", OperatingSystem.IsMacOS() ? "h264_videotoolbox" : "libx264"
         };
+        var normalizedQuality = quality switch
+        {
+            "Smaller file" => "Smaller files",
+            "Higher quality" => "Maximum detail",
+            _ => quality
+        };
         if (OperatingSystem.IsMacOS())
-            arguments.AddRange(new[] { "-b:v", "6M" });
+            arguments.AddRange(new[] { "-b:v", normalizedQuality switch { "Smaller files" => "3M", "Maximum detail" => "10M", _ => "6M" } });
         else
-            arguments.AddRange(new[] { "-preset", "ultrafast", "-crf", "20" });
+            arguments.AddRange(new[] { "-preset", "ultrafast", "-crf", normalizedQuality switch { "Smaller files" => "28", "Maximum detail" => "18", _ => "23" } });
         arguments.AddRange(new[] { "-c:a", "aac", "-movflags", "+faststart", outputPath });
         foreach (var argument in arguments)
             startInfo.ArgumentList.Add(argument);
@@ -439,7 +630,8 @@ internal static class MediaLibraryService
 
     private static async Task<ProcessStartInfo> BuildCaptureStartInfoAsync(string ffmpeg, string outputPath, bool screenshot,
         int frameRate = 30, string quality = "Balanced", int? microphoneIndex = null, int? systemAudioIndex = null,
-        int? cameraIndex = null, bool cameraOnly = false, int screenOrdinal = 0, CaptureArea? area = null)
+        int? cameraIndex = null, bool cameraOnly = false, int screenOrdinal = 0, CaptureArea? area = null,
+        CaptureWindowTarget? windowTarget = null)
     {
         var startInfo = new ProcessStartInfo(ffmpeg)
         {
@@ -496,15 +688,15 @@ internal static class MediaLibraryService
             if (cameraOverlay)
             {
                 if (area is not null)
-                    filterGraph.Add($"[0:v]crop={area.Width}:{area.Height}:{area.X}:{area.Y},split[screenScale][screenBase]");
+                    filterGraph.Add($"[0:v]crop={area.Width}:{area.Height}:{area.X}:{area.Y}[screenSource]");
                 else
-                    filterGraph.Add("[0:v]split[screenScale][screenBase]");
+                    filterGraph.Add("[0:v]null[screenSource]");
 
                 filterGraph.Add("[1:v]crop='min(iw,ih)':'min(iw,ih)'[cameraSquare]");
-                filterGraph.Add("[cameraSquare][screenScale]scale=w='min(480,rw*0.18)':h='min(480,rw*0.18)'[cameraSized]");
+                filterGraph.Add("[cameraSquare][screenSource]scale2ref=w='min(480,rw*0.18)':h='min(480,rw*0.18)'[cameraSized][screen]");
                 filterGraph.Add("[cameraSized]format=rgba," +
                     "geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='clip(min(W,H)/2+0.5-sqrt(pow(X-W/2,2)+pow(Y-H/2,2)),0,1)*255'[camera]");
-                filterGraph.Add("[screenBase][camera]overlay=main_w-overlay_w-28:main_h-overlay_h-28:format=auto[video]");
+                filterGraph.Add("[screen][camera]overlay=main_w-overlay_w-28:main_h-overlay_h-28:format=auto[video]");
                 startInfo.ArgumentList.Add("-map");
                 startInfo.ArgumentList.Add("[video]");
             }
@@ -576,46 +768,69 @@ internal static class MediaLibraryService
         }
         else if (OperatingSystem.IsWindows())
         {
-            startInfo.ArgumentList.Add("-f");
-            startInfo.ArgumentList.Add("gdigrab");
-            startInfo.ArgumentList.Add("-draw_mouse");
-            startInfo.ArgumentList.Add(capturePointer ? "1" : "0");
-            startInfo.ArgumentList.Add("-framerate");
-            startInfo.ArgumentList.Add(screenshot ? "1" : Math.Clamp(frameRate, 1, 120).ToString());
-            if (area is not null)
+            if (!cameraOnly)
             {
-                startInfo.ArgumentList.Add("-offset_x");
-                startInfo.ArgumentList.Add((area.X + area.ScreenOriginX).ToString());
-                startInfo.ArgumentList.Add("-offset_y");
-                startInfo.ArgumentList.Add((area.Y + area.ScreenOriginY).ToString());
-                startInfo.ArgumentList.Add("-video_size");
-                startInfo.ArgumentList.Add($"{area.Width}x{area.Height}");
+                startInfo.ArgumentList.Add("-f");
+                startInfo.ArgumentList.Add("gdigrab");
+                startInfo.ArgumentList.Add("-draw_mouse");
+                startInfo.ArgumentList.Add(capturePointer ? "1" : "0");
+                startInfo.ArgumentList.Add("-framerate");
+                startInfo.ArgumentList.Add(screenshot ? "1" : Math.Clamp(frameRate, 1, 120).ToString());
+                if (windowTarget is not null)
+                {
+                    if (!NativeWindowCapture.IsAvailable(windowTarget))
+                        throw new InvalidOperationException("The selected window has closed. Choose an open window and try again.");
+                }
+                else if (area is not null)
+                {
+                    startInfo.ArgumentList.Add("-offset_x");
+                    startInfo.ArgumentList.Add((area.X + area.ScreenOriginX).ToString());
+                    startInfo.ArgumentList.Add("-offset_y");
+                    startInfo.ArgumentList.Add((area.Y + area.ScreenOriginY).ToString());
+                    startInfo.ArgumentList.Add("-video_size");
+                    startInfo.ArgumentList.Add($"{area.Width}x{area.Height}");
+                }
+                startInfo.ArgumentList.Add("-i");
+                startInfo.ArgumentList.Add(windowTarget is null ? "desktop" : $"hwnd=0x{windowTarget.Handle:X}");
             }
-            startInfo.ArgumentList.Add("-i");
-            startInfo.ArgumentList.Add("desktop");
         }
         else
         {
-            var display = Environment.GetEnvironmentVariable("DISPLAY");
-            if (string.IsNullOrWhiteSpace(display))
-                throw new InvalidOperationException("No X11 display was found. Install a supported desktop capture tool or set DISPLAY.");
+            if (!cameraOnly)
+            {
+                var display = Environment.GetEnvironmentVariable("DISPLAY");
+                if (string.IsNullOrWhiteSpace(display))
+                    throw new InvalidOperationException("No X11 display was found. Linux screen recording currently requires an X11 or XWayland display.");
 
-            var primary = area is null ? GetX11PrimaryMode() : (area.Width, area.Height, 0, 0);
-
-            startInfo.ArgumentList.Add("-f");
-            startInfo.ArgumentList.Add("x11grab");
-            startInfo.ArgumentList.Add("-draw_mouse");
-            startInfo.ArgumentList.Add(capturePointer ? "1" : "0");
-            startInfo.ArgumentList.Add("-framerate");
-            startInfo.ArgumentList.Add(screenshot ? "1" : Math.Clamp(frameRate, 1, 120).ToString());
-            startInfo.ArgumentList.Add("-video_size");
-            startInfo.ArgumentList.Add($"{primary.Item1}x{primary.Item2}");
-            var offsetX = area is null ? primary.Item3 : area.X + area.ScreenOriginX;
-            var offsetY = area is null ? primary.Item4 : area.Y + area.ScreenOriginY;
-            display += $"+{offsetX},{offsetY}";
-            startInfo.ArgumentList.Add("-i");
-            startInfo.ArgumentList.Add(display);
+                var primary = windowTarget is not null
+                    ? (0, 0, 0, 0)
+                    : area is null ? GetX11PrimaryMode() : (area.Width, area.Height, 0, 0);
+                startInfo.ArgumentList.Add("-f");
+                startInfo.ArgumentList.Add("x11grab");
+                startInfo.ArgumentList.Add("-draw_mouse");
+                startInfo.ArgumentList.Add(capturePointer ? "1" : "0");
+                startInfo.ArgumentList.Add("-framerate");
+                startInfo.ArgumentList.Add(screenshot ? "1" : Math.Clamp(frameRate, 1, 120).ToString());
+                if (windowTarget is not null)
+                {
+                    startInfo.ArgumentList.Add("-window_id");
+                    startInfo.ArgumentList.Add($"0x{windowTarget.Handle:X}");
+                }
+                else
+                {
+                    startInfo.ArgumentList.Add("-video_size");
+                    startInfo.ArgumentList.Add($"{primary.Item1}x{primary.Item2}");
+                    var offsetX = area is null ? primary.Item3 : area.X + area.ScreenOriginX;
+                    var offsetY = area is null ? primary.Item4 : area.Y + area.ScreenOriginY;
+                    display += $"+{offsetX},{offsetY}";
+                }
+                startInfo.ArgumentList.Add("-i");
+                startInfo.ArgumentList.Add(display);
+            }
         }
+
+        if (!OperatingSystem.IsMacOS() && !screenshot)
+            await AddNonMacCaptureDevicesAsync(startInfo, frameRate, microphoneIndex, systemAudioIndex, cameraIndex, cameraOnly);
 
         if (screenshot)
         {
@@ -654,6 +869,154 @@ internal static class MediaLibraryService
         }
 
         return startInfo;
+    }
+
+    private static async Task AddNonMacCaptureDevicesAsync(ProcessStartInfo startInfo, int frameRate,
+        int? microphoneIndex, int? systemAudioIndex, int? cameraIndex, bool cameraOnly)
+    {
+        if (!cameraOnly && cameraIndex is null && microphoneIndex is null && systemAudioIndex is null)
+        {
+            startInfo.ArgumentList.Add("-map");
+            startInfo.ArgumentList.Add("0:v:0");
+            return;
+        }
+
+        var devices = await ListCaptureDevicesAsync();
+        CaptureDevice? Resolve(int? index, string kind) => index is null
+            ? null
+            : devices.FirstOrDefault(device => device.Index == index && device.Kind == kind);
+
+        var camera = Resolve(cameraIndex, "Camera");
+        if (cameraOnly && camera is null)
+            camera = devices.FirstOrDefault(device => device.Kind == "Camera");
+        if (cameraOnly && camera is null)
+            throw new InvalidOperationException("No camera was found. Connect a camera and select it before starting Camera Only recording.");
+        if (cameraIndex is not null && camera is null)
+            throw new InvalidOperationException("The selected camera is no longer available. Choose another camera.");
+
+        var screenVideoIndex = cameraOnly ? (int?)null : 0;
+        var nextInputIndex = cameraOnly ? 0 : 1;
+        int? cameraInputIndex = null;
+        if (camera is not null)
+        {
+            cameraInputIndex = nextInputIndex++;
+            AddCameraInput(startInfo, camera, frameRate);
+        }
+        var microphone = Resolve(microphoneIndex, "Microphone");
+        var systemAudio = Resolve(systemAudioIndex, "System Audio");
+        if (microphoneIndex is not null && microphone is null)
+            throw new InvalidOperationException("The selected microphone is no longer available. Choose another microphone.");
+        if (systemAudioIndex is not null && systemAudio is null)
+            throw new InvalidOperationException("The selected system-audio source is no longer available. Choose another source.");
+
+        var audioInputs = new List<(int Index, bool IsMicrophone)>();
+        if (microphone is not null)
+        {
+            audioInputs.Add((nextInputIndex++, true));
+            AddAudioInput(startInfo, microphone);
+        }
+        if (systemAudio is not null)
+        {
+            audioInputs.Add((nextInputIndex, false));
+            AddAudioInput(startInfo, systemAudio);
+        }
+
+        var filterGraph = new List<string>();
+        var cameraOverlay = !cameraOnly && screenVideoIndex is not null && cameraInputIndex is not null;
+        if (cameraOverlay)
+        {
+            filterGraph.Add($"[{cameraInputIndex}:v]crop='min(iw,ih)':'min(iw,ih)'[cameraSquare]");
+            filterGraph.Add($"[cameraSquare][{screenVideoIndex}:v]scale2ref=w='min(480,rw*0.18)':h='min(480,rw*0.18)'[cameraSized][screen]");
+            filterGraph.Add("[cameraSized]format=rgba," +
+                "geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='clip(min(W,H)/2+0.5-sqrt(pow(X-W/2,2)+pow(Y-H/2,2)),0,1)*255'[camera]");
+            filterGraph.Add("[screen][camera]overlay=main_w-overlay_w-28:main_h-overlay_h-28:format=auto[video]");
+            startInfo.ArgumentList.Add("-map");
+            startInfo.ArgumentList.Add("[video]");
+        }
+        else
+        {
+            var videoInput = cameraOnly ? cameraInputIndex : screenVideoIndex;
+            if (videoInput is null)
+                throw new InvalidOperationException("No video input is available for this recording.");
+            startInfo.ArgumentList.Add("-map");
+            startInfo.ArgumentList.Add($"{videoInput}:v:0");
+        }
+
+        if (audioInputs.Count == 1)
+        {
+            startInfo.ArgumentList.Add("-map");
+            startInfo.ArgumentList.Add($"{audioInputs[0].Index}:a:0?");
+            startInfo.ArgumentList.Add("-c:a");
+            startInfo.ArgumentList.Add("aac");
+            if (audioInputs[0].IsMicrophone && AppPreferencesStore.Get("general.Studio Sound on new recordings") != "false")
+            {
+                startInfo.ArgumentList.Add("-filter:a:0");
+                startInfo.ArgumentList.Add("afftdn");
+            }
+        }
+        else if (audioInputs.Count > 1)
+        {
+            var audioLabels = new List<string>();
+            foreach (var (inputIndex, isMicrophone) in audioInputs)
+            {
+                var label = $"audio{audioLabels.Count}";
+                if (isMicrophone && AppPreferencesStore.Get("general.Studio Sound on new recordings") != "false")
+                    filterGraph.Add($"[{inputIndex}:a:0]afftdn[{label}]");
+                else
+                    label = $"{inputIndex}:a:0";
+                audioLabels.Add($"[{label}]");
+            }
+            filterGraph.Add($"{string.Concat(audioLabels)}amix=inputs={audioInputs.Count}:duration=longest:dropout_transition=2[audio]");
+            startInfo.ArgumentList.Add("-map");
+            startInfo.ArgumentList.Add("[audio]");
+            startInfo.ArgumentList.Add("-c:a");
+            startInfo.ArgumentList.Add("aac");
+        }
+
+        if (filterGraph.Count > 0)
+        {
+            startInfo.ArgumentList.Add("-filter_complex");
+            startInfo.ArgumentList.Add(string.Join(';', filterGraph));
+        }
+    }
+
+    private static void AddCameraInput(ProcessStartInfo startInfo, CaptureDevice camera, int frameRate)
+    {
+        var id = camera.DeviceId ?? camera.Name;
+        if (OperatingSystem.IsWindows())
+        {
+            AddInputOption(startInfo, "-f", "dshow");
+            AddInputOption(startInfo, "-rtbufsize", "256M");
+            AddInputOption(startInfo, "-framerate", Math.Clamp(frameRate, 1, 30).ToString());
+            AddInputOption(startInfo, "-i", "video=" + id);
+        }
+        else
+        {
+            AddInputOption(startInfo, "-f", "v4l2");
+            AddInputOption(startInfo, "-framerate", Math.Clamp(frameRate, 1, 30).ToString());
+            AddInputOption(startInfo, "-i", id);
+        }
+    }
+
+    private static void AddAudioInput(ProcessStartInfo startInfo, CaptureDevice audio)
+    {
+        var id = audio.DeviceId ?? audio.Name;
+        if (OperatingSystem.IsWindows())
+        {
+            AddInputOption(startInfo, "-f", "dshow");
+            AddInputOption(startInfo, "-i", "audio=" + id);
+        }
+        else
+        {
+            AddInputOption(startInfo, "-f", "pulse");
+            AddInputOption(startInfo, "-i", id);
+        }
+    }
+
+    private static void AddInputOption(ProcessStartInfo startInfo, string option, string value)
+    {
+        startInfo.ArgumentList.Add(option);
+        startInfo.ArgumentList.Add(value);
     }
 
     private static void AddAvFoundationInput(ProcessStartInfo startInfo, string device, int frameRate,
@@ -717,7 +1080,11 @@ internal static class MediaLibraryService
     private static string FindFfmpeg()
     {
         var executable = OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg";
-        var candidates = new List<string>();
+        var candidates = new List<string>
+        {
+            Path.Combine(AppContext.BaseDirectory, executable),
+            Path.Combine(AppContext.BaseDirectory, "Helpers", executable)
+        };
         var path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
         candidates.AddRange(path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
             .Select(directory => Path.Combine(directory, executable)));
@@ -737,10 +1104,14 @@ internal static class MediaLibraryService
     private static string FindCompanion(string name)
     {
         var executable = OperatingSystem.IsWindows() ? name + ".exe" : name;
-        var candidates = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
+        var candidates = new List<string>
+        {
+            Path.Combine(AppContext.BaseDirectory, executable),
+            Path.Combine(AppContext.BaseDirectory, "Helpers", executable)
+        };
+        candidates.AddRange((Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
             .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(directory => Path.Combine(directory, executable))
-            .ToList();
+            .Select(directory => Path.Combine(directory, executable)));
         if (OperatingSystem.IsMacOS())
         {
             candidates.Add(Path.Combine("/opt/homebrew/bin", executable));

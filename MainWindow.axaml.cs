@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private int _screenOrdinal;
     private string _captureTargetKind = "Display";
     private CaptureArea? _captureArea;
+    private CaptureWindowTarget? _windowTarget;
     private int? _cameraDeviceIndex;
     private int? _microphoneDeviceIndex;
     private int? _systemAudioDeviceIndex;
@@ -55,24 +56,6 @@ public partial class MainWindow : Window
         if (_captureArea is not null)
             _screenOrdinal = _captureArea.ScreenOrdinal;
         UpdateDeviceControls();
-        if (!OperatingSystem.IsMacOS())
-        {
-            CameraOnlyButton.IsEnabled = false;
-            CameraDeviceButton.IsEnabled = false;
-            CameraAudioButton.IsEnabled = false;
-            MicrophoneDeviceButton.IsEnabled = false;
-            MicrophoneAudioButton.IsEnabled = false;
-            SystemAudioDeviceButton.IsEnabled = false;
-            SystemAudioStatusButton.IsEnabled = false;
-            const string help = "Camera and audio device capture currently require macOS.";
-            ToolTip.SetTip(CameraOnlyButton, help);
-            ToolTip.SetTip(CameraDeviceButton, help);
-            ToolTip.SetTip(CameraAudioButton, help);
-            ToolTip.SetTip(MicrophoneDeviceButton, help);
-            ToolTip.SetTip(MicrophoneAudioButton, help);
-            ToolTip.SetTip(SystemAudioDeviceButton, help);
-            ToolTip.SetTip(SystemAudioStatusButton, help);
-        }
         ApplyModeVisuals();
         RefreshActivityIndicator(initializeReadState: true);
         AddHandler(KeyDownEvent, OnKeyboardShortcut, RoutingStrategies.Tunnel);
@@ -135,6 +118,11 @@ public partial class MainWindow : Window
         {
             if (_selectedMode == "Screenshot")
             {
+                if (OperatingSystem.IsWindows() && _captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
+                {
+                    ShowStatus("Choose an open window before taking a window screenshot.");
+                    return;
+                }
                 var path = await TakeScreenshotAsync();
                 var backup = await ApplySaveAutomationAsync(path, screenshot: true);
                 ShowStatus($"Screenshot saved: {Path.GetFileName(path)}{backup}");
@@ -145,6 +133,11 @@ public partial class MainWindow : Window
 
             if (_recordingSession is null)
             {
+                if (_captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
+                {
+                    ShowStatus("Choose an open window before recording.");
+                    return;
+                }
                 if (!await EnsureSelectedDevicesAvailableAsync())
                     return;
 
@@ -166,7 +159,7 @@ public partial class MainWindow : Window
                     _systemAudioEnabled ? _systemAudioDeviceIndex : null,
                     _cameraEnabled ? _cameraDeviceIndex : null,
                     _cameraOnly, _screenOrdinal, _captureArea,
-                    AppPreferencesStore.Get("general.project-name"), _selectedMode, _captureTargetKind);
+                    AppPreferencesStore.Get("general.project-name"), _selectedMode, _captureTargetKind, _windowTarget);
                 RecordGlyph.Fill = new SolidColorBrush(Color.Parse("#F04444"));
                 ToolTip.SetTip(RecordButton, "Stop recording");
                 ShowStatus(_selectedMode == "Instant"
@@ -235,6 +228,11 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnRecordingModeInfoClick(object? sender, RoutedEventArgs e)
+    {
+        new RecordingModeInfoWindow().ShowDialog(this);
+    }
+
     private void OnOpenScreenshots(object? sender, RoutedEventArgs e)
     {
         OpenSettings("Screenshots");
@@ -290,6 +288,7 @@ public partial class MainWindow : Window
             _screenOrdinal = ordinal;
             _captureTargetKind = "Display";
             _cameraOnly = false;
+            _windowTarget = null;
             _captureArea = OperatingSystem.IsMacOS()
                 ? null
                 : new CaptureArea(ordinal, 0, 0, bounds.Width, bounds.Height, bounds.X, bounds.Y);
@@ -310,11 +309,39 @@ public partial class MainWindow : Window
         return completion.Task;
     }
 
-    private async void OnWindowTargetClick(object? sender, RoutedEventArgs e) =>
-        _ = await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window");
+    private async void OnWindowTargetClick(object? sender, RoutedEventArgs e) => _ = await SelectWindowAsync();
 
     private async void OnAreaTargetClick(object? sender, RoutedEventArgs e) =>
         _ = await SelectAreaAsync("Drag to select the area to capture", "Capture area selected.", "Area");
+
+    private async Task<bool> SelectWindowAsync()
+    {
+        if (_recordingSession is not null)
+        {
+            ShowStatus("Stop the current recording before changing the capture target.");
+            return false;
+        }
+
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux())
+            return await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window");
+
+        var target = await CaptureWindowPickerWindow.SelectAsync(this);
+        if (target is null)
+            return false;
+        _windowTarget = target;
+        _captureArea = null;
+        _captureTargetKind = "Window";
+        _cameraOnly = false;
+        ToolTip.SetTip(WindowTargetButton, $"Window selected: {target.Title}");
+        try
+        {
+            AppPreferencesStore.Set("capture.target.kind", "Window");
+            AppPreferencesStore.Set("capture.area", string.Empty);
+        }
+        catch { }
+        ShowStatus($"Window selected: {target.Title}");
+        return true;
+    }
 
     private async Task<bool> SelectAreaAsync(string instruction, string resultMessage, string targetKind)
     {
@@ -323,6 +350,9 @@ public partial class MainWindow : Window
         if (area is null)
             return false;
         _captureArea = area;
+        _windowTarget = null;
+        if (targetKind == "Window")
+            ToolTip.SetTip(WindowTargetButton, "Select a window's screen area");
         _screenOrdinal = area.ScreenOrdinal;
         _captureTargetKind = targetKind;
         try
@@ -432,16 +462,13 @@ public partial class MainWindow : Window
 
     private async Task<bool> EnsureSelectedDevicesAvailableAsync()
     {
-        if (!OperatingSystem.IsMacOS())
-            return true;
-
         if (!_cameraEnabled && !_microphoneEnabled && !_systemAudioEnabled)
             return true;
 
         IReadOnlyList<CaptureDevice> available;
         try
         {
-            available = await MediaLibraryService.ListMacCaptureDevicesAsync();
+            available = await MediaLibraryService.ListCaptureDevicesAsync();
         }
         catch (Exception error)
         {
@@ -472,7 +499,8 @@ public partial class MainWindow : Window
             return false;
         }
 
-        if (_systemAudioEnabled && !IsStillAvailable(available, _systemAudioDeviceIndex, "Microphone", "capture.systemaudio.name"))
+        var systemAudioKind = OperatingSystem.IsMacOS() ? "Microphone" : "System Audio";
+        if (_systemAudioEnabled && !IsStillAvailable(available, _systemAudioDeviceIndex, systemAudioKind, "capture.systemaudio.name"))
         {
             _systemAudioDeviceIndex = null;
             try { AppPreferencesStore.Set("capture.systemaudio.index", string.Empty); } catch { }
@@ -683,9 +711,19 @@ public partial class MainWindow : Window
         _recordingOverlayWindow?.Close();
         _recordingOverlayWindow = new RecordingOverlayWindow(this,
             () => _ = OnCaptureButtonClickAsync(),
+            ToggleRecordingPause,
             OnKeyboardShortcut);
         _recordingOverlayWindow.Closed += (_, _) => _recordingOverlayWindow = null;
         _recordingOverlayWindow.Show();
+    }
+
+    private bool ToggleRecordingPause()
+    {
+        if (_recordingSession is null)
+            throw new InvalidOperationException("There is no recording to pause.");
+        var paused = _recordingSession.TogglePaused();
+        _recordingOverlayWindow?.SetPaused(paused);
+        return paused;
     }
 
     private void RestoreRecorderWindow()
@@ -712,7 +750,7 @@ public partial class MainWindow : Window
         await Task.Delay(250);
         try
         {
-            return await MediaLibraryService.CaptureScreenshotAsync(_captureArea, _screenOrdinal);
+            return await MediaLibraryService.CaptureScreenshotAsync(_captureArea, _screenOrdinal, _windowTarget);
         }
         finally
         {
@@ -756,7 +794,7 @@ public partial class MainWindow : Window
                 if (_recordingSession is null)
                     ShowStatus("There is no recording to pause.");
                 else
-                    ShowStatus(_recordingSession.TogglePaused() ? "Recording paused." : "Recording resumed.");
+                    ShowStatus(ToggleRecordingPause() ? "Recording paused." : "Recording resumed.");
             }
             catch (Exception error)
             {
@@ -788,7 +826,7 @@ public partial class MainWindow : Window
         else if (MatchesShortcut(e, "screenshot.window", "Primary+Shift+W"))
         {
             e.Handled = true;
-            if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+            if (await SelectWindowAsync())
                 await TakeShortcutScreenshotAsync(display: false);
         }
         else if (MatchesShortcut(e, "screenshot.area", "Primary+Shift+A"))
@@ -806,7 +844,7 @@ public partial class MainWindow : Window
         else if (MatchesShortcut(e, "recording.window", "Primary+Alt+W"))
         {
             e.Handled = true;
-            if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+            if (await SelectWindowAsync())
                 await StartRecordingFromShortcutAsync();
         }
         else if (MatchesShortcut(e, "recording.area", "Primary+Alt+A"))
@@ -859,7 +897,7 @@ public partial class MainWindow : Window
                     if (_recordingSession is null)
                         ShowStatus("There is no recording to pause.");
                     else
-                        ShowStatus(_recordingSession.TogglePaused() ? "Recording paused." : "Recording resumed.");
+                        ShowStatus(ToggleRecordingPause() ? "Recording paused." : "Recording resumed.");
                 }
                 catch (Exception error)
                 {
@@ -883,7 +921,7 @@ public partial class MainWindow : Window
                 await TakeShortcutScreenshotAsync(display: true);
                 break;
             case "screenshot.window":
-                if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+                if (await SelectWindowAsync())
                     await TakeShortcutScreenshotAsync(display: false);
                 break;
             case "screenshot.area":
@@ -895,7 +933,7 @@ public partial class MainWindow : Window
                     await StartRecordingFromShortcutAsync();
                 break;
             case "recording.window":
-                if (await SelectAreaAsync("Drag around the window to capture its screen area", "Window area selected.", "Window"))
+                if (await SelectWindowAsync())
                     await StartRecordingFromShortcutAsync();
                 break;
             case "recording.area":
@@ -907,9 +945,18 @@ public partial class MainWindow : Window
 
     private async Task TakeShortcutScreenshotAsync(bool display)
     {
+        if (!display && OperatingSystem.IsWindows() && _captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
+        {
+            ShowStatus("Choose an open window before taking a window screenshot.");
+            return;
+        }
         var previousArea = _captureArea;
+        var previousWindow = _windowTarget;
         if (display)
+        {
             _captureArea = null;
+            _windowTarget = null;
+        }
         try
         {
             var path = await TakeScreenshotAsync();
@@ -925,7 +972,10 @@ public partial class MainWindow : Window
         finally
         {
             if (display)
+            {
                 _captureArea = previousArea;
+                _windowTarget = previousWindow;
+            }
         }
     }
 

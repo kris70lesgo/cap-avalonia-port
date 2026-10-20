@@ -21,6 +21,7 @@ internal sealed class VideoEditorWindow : Window
     private readonly TextBlock _timeLabel;
     private readonly TextBlock _status;
     private readonly Button _export;
+    private readonly ComboBox _exportQuality;
     private Bitmap? _previewBitmap;
     private double _duration;
     private double _start;
@@ -47,8 +48,20 @@ internal sealed class VideoEditorWindow : Window
         _status = Text("Loading recording…", 12, "#A4A4A4");
         _export = Action("Export clip", primary: true);
         _export.Click += async (_, _) => await ExportAsync();
+        _exportQuality = new ComboBox
+        {
+            Width = 138,
+            Height = 34,
+            SelectedIndex = 1,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Background = new SolidColorBrush(Color.Parse("#242424")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#383838")),
+            Foreground = Brushes.White,
+            CornerRadius = new CornerRadius(8),
+            Items = { new ComboBoxItem { Content = "Smaller file" }, new ComboBoxItem { Content = "Balanced" }, new ComboBoxItem { Content = "Higher quality" } }
+        };
 
-        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"), ColumnSpacing = 12, Margin = new Thickness(20, 14) };
+        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto,Auto"), ColumnSpacing = 10, Margin = new Thickness(20, 14) };
         var back = Action("Back to recordings");
         back.Click += (_, _) => Close();
         header.Children.Add(back);
@@ -66,7 +79,9 @@ internal sealed class VideoEditorWindow : Window
         };
         Grid.SetColumn(play, 2);
         header.Children.Add(play);
-        Grid.SetColumn(_export, 3);
+        Grid.SetColumn(_exportQuality, 3);
+        header.Children.Add(_exportQuality);
+        Grid.SetColumn(_export, 4);
         header.Children.Add(_export);
 
         var previewHost = new Border
@@ -221,7 +236,8 @@ internal sealed class VideoEditorWindow : Window
 
             _export.IsEnabled = false;
             SetStatus("Exporting clip…");
-            await MediaLibraryService.ExportTrimmedVideoAsync(_path, file.Path.LocalPath, _start, _end);
+            var quality = (_exportQuality.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Balanced";
+            await MediaLibraryService.ExportTrimmedVideoAsync(_path, file.Path.LocalPath, _start, _end, quality);
             SetStatus("Export saved: " + Path.GetFileName(file.Path.LocalPath));
         }
         catch (Exception error)

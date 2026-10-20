@@ -315,6 +315,23 @@ internal static class SettingsPageFactory
         details.Children.Add(badges);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        var rename = ActionIconButton("M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z", "Rename");
+        rename.Click += async (_, _) =>
+        {
+            var dialog = new RenameMediaWindow(item.Name);
+            if (!await dialog.ShowDialog<bool>(owner))
+                return;
+            try
+            {
+                MediaLibraryService.RenameMedia(item.Path, dialog.NewName);
+                refresh();
+            }
+            catch (Exception error)
+            {
+                ToolTip.SetTip(rename, error.Message);
+            }
+        };
+        actions.Children.Add(rename);
         if (screenshot)
         {
             var folderScreenshot = ActionIconButton("M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z", "Open folder");
@@ -338,7 +355,10 @@ internal static class SettingsPageFactory
                 catch (Exception error) { ToolTip.SetTip(copyImage, error.Message); }
             };
             actions.Children.Add(copyImage);
-            actions.Children.Add(ActionIconButton("M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7 M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7", "Share link unavailable"));
+            var share = ActionIconButton("M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7 M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7", "Share link unavailable");
+            share.IsEnabled = false;
+            ToolTip.SetTip(share, "Share links are not connected in this local build.");
+            actions.Children.Add(share);
         }
         else
         {
@@ -1032,12 +1052,14 @@ internal static class SettingsPageFactory
         captureInfo.Children.Add(Label("Capture Support", 14, MutedBrush, weight: FontWeight.Medium));
         var capturePermissionAvailable = OperatingSystem.IsMacOS() && MacScreenCaptureAccess.HasPermission;
         var ffmpegAvailable = MediaLibraryService.IsFfmpegAvailable;
-        var captureStatus = !OperatingSystem.IsMacOS()
-            ? "Screen Capture: Platform support varies"
-            : capturePermissionAvailable
-                ? "Screen Capture: Permission granted"
-                : "Screen Capture: Permission required";
-        var captureStatusColor = capturePermissionAvailable ? "#4ADE80" : "#F6C453";
+        var captureStatus = OperatingSystem.IsMacOS()
+            ? capturePermissionAvailable ? "Screen Capture: Permission granted" : "Screen Capture: Permission required"
+            : OperatingSystem.IsWindows()
+                ? "Screen Capture: Windows desktop"
+                : OperatingSystem.IsLinux()
+                    ? "Screen Capture: X11 / XWayland"
+                    : "Screen Capture: Unsupported platform";
+        var captureStatusColor = !OperatingSystem.IsMacOS() || capturePermissionAvailable ? "#4ADE80" : "#F6C453";
         captureInfo.Children.Add(new Border
         {
             Padding = new Thickness(8, 6),
@@ -1050,6 +1072,18 @@ internal static class SettingsPageFactory
                 Label("FFmpeg: " + (ffmpegAvailable ? "Available" : "Not found"), 12, Brush(ffmpegAvailable ? "#4ADE80" : "#F6C453"))
             }}
         });
+        if (OperatingSystem.IsMacOS() && !capturePermissionAvailable)
+        {
+            captureInfo.Children.Add(Label(
+                "If this build is already enabled, turn its Screen & System Audio Recording switch off and on, then quit and reopen Cap Avalonia. Ad hoc signing can make permissions stop applying after a rebuild.",
+                11, MutedBrush, wrap: true));
+            if (!string.IsNullOrWhiteSpace(MacScreenCaptureAccess.PermissionCheckError))
+                captureInfo.Children.Add(Label("Permission check error: " + MacScreenCaptureAccess.PermissionCheckError,
+                    11, Brush("#F6C453"), wrap: true));
+        }
+        if (OperatingSystem.IsLinux())
+            captureInfo.Children.Add(Label("Linux recording uses X11/XWayland. Native Wayland portal capture is not available.",
+                11, MutedBrush, wrap: true));
 
         var encoderInfo = new StackPanel { Spacing = 4 };
         encoderInfo.Children.Add(Label("Available Encoders", 14, MutedBrush, weight: FontWeight.Medium));

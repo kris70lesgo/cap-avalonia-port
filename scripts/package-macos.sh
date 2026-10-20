@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 runtime="${1:-osx-arm64}"
 app_path="${2:-$repo_root/.build/CapAvalonia-final.app}"
+signing_identity="${CAPAVALONIA_CODESIGN_IDENTITY:--}"
 app_name="$(basename "$app_path")"
 if [[ "$app_name" != *.app ]]; then
   echo "Output must be an .app bundle path: $app_path" >&2
@@ -22,6 +23,17 @@ dotnet publish "$repo_root/CapAvalonia.csproj" \
   --runtime "$runtime" \
   --self-contained true \
   --output "$publish_dir"
+
+if [[ -n "${CAPAVALONIA_FFMPEG_DIR:-}" ]]; then
+  mkdir -p "$publish_dir/Helpers"
+  for tool in ffmpeg ffprobe ffplay; do
+    if [[ ! -x "$CAPAVALONIA_FFMPEG_DIR/$tool" ]]; then
+      echo "Expected executable not found: $CAPAVALONIA_FFMPEG_DIR/$tool" >&2
+      exit 1
+    fi
+    cp "$CAPAVALONIA_FFMPEG_DIR/$tool" "$publish_dir/Helpers/$tool"
+  done
+fi
 
 mkdir -p "$app_stage/Contents/MacOS" "$app_stage/Contents/Resources"
 cp -R "$publish_dir/." "$app_stage/Contents/MacOS/"
@@ -45,6 +57,7 @@ cat > "$app_stage/Contents/Info.plist" <<'PLIST'
   <key>NSHighResolutionCapable</key><true/>
   <key>NSCameraUsageDescription</key><string>Cap Avalonia uses the camera when you include a camera in a recording.</string>
   <key>NSMicrophoneUsageDescription</key><string>Cap Avalonia records microphone audio when you enable it.</string>
+  <key>NSAudioCaptureUsageDescription</key><string>Cap Avalonia captures system audio when you enable a loopback input.</string>
   <key>NSScreenCaptureUsageDescription</key><string>Cap Avalonia captures your screen when you record or take a screenshot.</string>
 </dict>
 </plist>
@@ -52,7 +65,7 @@ PLIST
 
 touch "$app_stage/Contents/Resources/.cap-avalonia-build"
 plutil -lint "$app_stage/Contents/Info.plist"
-codesign --force --deep --sign - "$app_stage"
+codesign --force --deep --sign "$signing_identity" "$app_stage"
 
 if [[ -e "$app_path" ]]; then
   if [[ ! -f "$app_path/Contents/Resources/.cap-avalonia-build" ]]; then
