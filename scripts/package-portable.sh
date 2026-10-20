@@ -46,6 +46,7 @@ FFmpeg tools (ffmpeg, ffprobe, and ffplay). If they are not in the Helpers
 folder beside this file, install FFmpeg and make sure it is on PATH.
 
 The Linux screen-capture backend currently requires X11 or XWayland.
+Linux window selection also uses xwininfo; install it from your distribution package manager.
 README.md is included for platform notes and project details.
 LICENSE contains the project license.
 EOF

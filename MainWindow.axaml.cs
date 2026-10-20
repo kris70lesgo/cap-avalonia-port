@@ -55,6 +55,9 @@ public partial class MainWindow : Window
         _captureArea = ReadCaptureArea();
         if (_captureArea is not null)
             _screenOrdinal = _captureArea.ScreenOrdinal;
+        ToolTip.SetTip(WindowTargetButton, OperatingSystem.IsMacOS()
+            ? "Select a window's screen area"
+            : "Choose an open window to capture");
         UpdateDeviceControls();
         ApplyModeVisuals();
         RefreshActivityIndicator(initializeReadState: true);
@@ -118,7 +121,7 @@ public partial class MainWindow : Window
         {
             if (_selectedMode == "Screenshot")
             {
-                if (OperatingSystem.IsWindows() && _captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
+                if ((OperatingSystem.IsWindows() || OperatingSystem.IsLinux()) && _captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
                 {
                     ShowStatus("Choose an open window before taking a window screenshot.");
                     return;
@@ -133,7 +136,7 @@ public partial class MainWindow : Window
 
             if (_recordingSession is null)
             {
-                if (_captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
+                if (!_cameraOnly && _captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
                 {
                     ShowStatus("Choose an open window before recording.");
                     return;
@@ -289,6 +292,9 @@ public partial class MainWindow : Window
             _captureTargetKind = "Display";
             _cameraOnly = false;
             _windowTarget = null;
+            ToolTip.SetTip(WindowTargetButton, OperatingSystem.IsMacOS()
+                ? "Select a window's screen area"
+                : "Choose an open window to capture");
             _captureArea = OperatingSystem.IsMacOS()
                 ? null
                 : new CaptureArea(ordinal, 0, 0, bounds.Width, bounds.Height, bounds.X, bounds.Y);
@@ -371,7 +377,12 @@ public partial class MainWindow : Window
         if (_cameraOnly)
         {
             _cameraOnly = false;
-            ShowStatus("Display capture is selected.");
+            ShowStatus(_captureTargetKind switch
+            {
+                "Window" => "Window capture is selected.",
+                "Area" => "Area capture is selected.",
+                _ => "Display capture is selected."
+            });
             return;
         }
 
@@ -945,7 +956,7 @@ public partial class MainWindow : Window
 
     private async Task TakeShortcutScreenshotAsync(bool display)
     {
-        if (!display && OperatingSystem.IsWindows() && _captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
+        if (!display && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()) && _captureTargetKind == "Window" && !NativeWindowCapture.IsAvailable(_windowTarget))
         {
             ShowStatus("Choose an open window before taking a window screenshot.");
             return;
