@@ -1,53 +1,146 @@
-# Cap Avalonia
+<div align="center">
 
-A cross-platform Avalonia port of Cap's desktop app. It recreates the compact recorder window and all 13 Settings pages, with local Recordings and Screenshots libraries. Local workflows include display recording, screenshot capture, selectable displays and crop areas, camera and microphone inputs, circular webcam picture-in-picture, video trimming and export, screenshot annotation with pen, arrows, rectangles, highlights and text, a scrolling teleprompter, unread activity, media import, clipboard copy, deletion to the system Trash, configurable shortcuts, and local backup automations. Recorder mode, capture devices, library paths, trim points, teleprompter text, shortcuts, and settings persist between launches.
+<h1>Cap Avalonia</h1>
 
-This is a local recorder and library; Cap's account, upload, share-link, and other online services are not connected. Camera and microphone capture uses FFmpeg AVFoundation on macOS, DirectShow on Windows, and V4L2/PulseAudio on Linux. Screen recordings can include a circular webcam overlay and mix selected microphone and system-audio inputs. System audio depends on an available loopback source, such as BlackHole on macOS or a monitor/Stereo Mix source on Windows and Linux. Windows and X11/XWayland Linux can capture a selected open window by its native handle, independent of its position; Linux window selection uses `xwininfo`. macOS currently uses a selected screen rectangle for the Window target, so windows layered over that rectangle remain visible. Linux display capture uses X11/XWayland; native Wayland portal capture is not implemented. The editor previews recordings, sets trim points, exports MP4 clips with selectable file-size/quality tradeoffs, and keeps the original recording unchanged. Recordings and screenshots can be renamed in the local library. Captions, transitions, cursor effects, and multi-track editing are not included. Screenshot annotations export as a new PNG. The Automations page can copy new recordings and screenshots to separate local backup folders. Shortcut registration uses Carbon on macOS; app-focused shortcuts work on other platforms. Cap's CLI, automatic updates, and online license services are not connected. The floating stop control is marked capture-excluded on macOS and may appear in recordings on other platforms.
+<p><strong>Cap’s compact desktop recorder, rebuilt with Avalonia.</strong></p>
 
-The reference application is [Cap](https://github.com/CapSoftware/Cap), an open-source screen recorder by Cap Software. This project adapts its desktop interface under the AGPL-3.0 license. See [LICENSE](LICENSE) for the license and the upstream copyright notice.
+An independent, local-first desktop port for recording your screen, camera, and microphone—then reviewing and exporting the result on your own device.
 
-## Run
+[Download the latest release](https://github.com/kris70lesgo/cap-avalonia-port/releases/latest) · [View the source](https://github.com/kris70lesgo/cap-avalonia-port) · [Explore upstream Cap](https://github.com/CapSoftware/Cap)
 
-Requires the .NET 9 SDK or newer.
+[![Release](https://img.shields.io/github/v/release/kris70lesgo/cap-avalonia-port?display_name=tag)](https://github.com/kris70lesgo/cap-avalonia-port/releases/latest)
+![Avalonia 12.1](https://img.shields.io/badge/Avalonia-12.1-8b5cf6)
+![.NET 9](https://img.shields.io/badge/.NET-9-512bd4)
+![AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)
+
+<br />
+
+<img src="screenshots/avalonia-final.jpg" alt="Cap Avalonia recorder window" width="420" />
+
+</div>
+
+## A familiar recorder. Files stay local.
+
+Cap Avalonia recreates Cap’s compact recorder and settings experience in one Avalonia codebase for macOS, Windows, and Linux. Record a display, window, area, or camera; add a circular webcam overlay and audio inputs; then save, trim, and export the recording locally.
+
+This port does not connect to Cap accounts, cloud uploads, share links, or hosted services. Your recordings, screenshots, and preferences stay on your device.
+
+## Download
+
+The release archives include the .NET runtime. **FFmpeg is a separate dependency** for recording and video editing; install it as described in [FFmpeg setup](#ffmpeg-setup).
+
+| Platform | Download | Launch |
+| --- | --- | --- |
+| macOS 13+ · Apple Silicon | [CapAvalonia-osx-arm64.zip](https://github.com/kris70lesgo/cap-avalonia-port/releases/latest/download/CapAvalonia-osx-arm64.zip) | Extract, then open `CapAvalonia-final.app` |
+| Windows · x64 | [CapAvalonia-win-x64.zip](https://github.com/kris70lesgo/cap-avalonia-port/releases/latest/download/CapAvalonia-win-x64.zip) | Extract, then open `CapAvalonia.exe` |
+| Linux · x64 | [CapAvalonia-linux-x64.zip](https://github.com/kris70lesgo/cap-avalonia-port/releases/latest/download/CapAvalonia-linux-x64.zip) | Extract, then run `./CapAvalonia` |
+
+See the [release page](https://github.com/kris70lesgo/cap-avalonia-port/releases) for version details.
+
+## At a glance
+
+| | |
+| --- | --- |
+| **Capture** | Display, selected window, area, or camera-only recording; still screenshots |
+| **Audio and camera** | Microphone, system-audio loopback, and circular webcam picture-in-picture |
+| **Local library** | Browse recordings and screenshots; import, rename, copy media to the clipboard, or move items to the system Trash |
+| **Editing** | Preview a recording, set trim points, and export an MP4 with file-size and quality choices while preserving the original |
+| **Screenshots** | Annotate with pen, arrows, rectangles, highlights, and text; export a new PNG |
+| **Workflow** | Scrolling teleprompter, unread activity, configurable shortcuts, persistent settings, and local backup automations |
+
+The interface includes the compact recorder and all 13 settings pages. Capture choices, library paths, editor trim points, teleprompter text, shortcuts, and settings persist between launches.
+
+## The port in screenshots
+
+The original and Avalonia recorder captures below have the same 660 × 790 image dimensions. The port targets Cap’s compact 330 × 395 logical-pixel recorder window.
+
+<p align="center">
+  <a href="screenshots/cap-desktop-reference.jpg"><img src="screenshots/cap-desktop-reference.jpg" alt="Original Cap desktop recorder" width="48%" /></a>
+  &nbsp;
+  <a href="screenshots/avalonia-final.jpg"><img src="screenshots/avalonia-final.jpg" alt="Cap Avalonia recorder" width="48%" /></a>
+</p>
+<p align="center"><sub>Cap desktop reference · Avalonia port</sub></p>
+
+## Platform support
+
+| Platform | Capture backend | Current status |
+| --- | --- | --- |
+| **macOS · Apple Silicon** | FFmpeg AVFoundation; macOS `screencapture` for full-display screenshots | Screen recording and screen + camera + microphone recording were verified. Grant screen, camera, and microphone permissions when prompted. |
+| **Windows · x64** | FFmpeg DirectShow; native window-handle capture | Release package builds. Device capture has not yet been validated on Windows. |
+| **Linux · x64** | FFmpeg V4L2/PulseAudio; X11/XWayland display capture | Release package builds. Device capture has not yet been validated on Linux. Native Wayland portal capture is not implemented. |
+
+### Compatibility notes
+
+- System audio needs an available loopback source, such as BlackHole on macOS or a monitor/Stereo Mix source on Windows and Linux.
+- Windows and X11/XWayland Linux can capture a selected window by its native handle. On macOS, the Window target captures the selected screen rectangle, so windows layered over it can remain visible.
+- Linux window selection uses `xwininfo`; display capture requires X11 or XWayland.
+- Global shortcut registration uses Carbon on macOS. Shortcuts are app-focused on Windows and Linux.
+- The floating stop control is excluded from macOS capture, but may appear in recordings on other platforms.
+- The local editor supports preview, trim, and MP4 export. Captions, transitions, cursor effects, and multi-track editing are not included.
+
+## Get started
+
+### 1. Install FFmpeg
+
+The release packages do not bundle FFmpeg. Install `ffmpeg`, `ffprobe`, and `ffplay`, and make sure they are available on `PATH`.
+
+- **macOS:** `brew install ffmpeg`
+- **Windows:** install an FFmpeg build from the [FFmpeg download page](https://ffmpeg.org/download.html) and add its `bin` folder to `PATH`.
+- **Linux:** install `ffmpeg` using your distribution’s package manager.
+
+For capture devices, use an FFmpeg build with the relevant backend: AVFoundation on macOS, DirectShow on Windows, and V4L2/PulseAudio on Linux. Video preview uses `ffplay`; media inspection and trim workflows use `ffprobe`.
+
+### 2. Launch the app
+
+Download the archive for your platform, extract it, and open the app listed in the [download table](#download). On Linux, run `./CapAvalonia` from the extracted folder. Grant screen-recording, camera, and microphone permissions for the features you use.
+
+The macOS app is ad-hoc signed. Privacy permissions may be associated with the specific build, so after replacing the app, reopen System Settings and re-enable Cap Avalonia if capture permission is no longer recognized.
+
+### 3. Choose where media is stored
+
+By default, recordings, screenshots, and preferences are stored under the platform’s application-support directory in `CapAvalonia/`. Change the recordings location in Settings. The Automations page can copy new recordings and screenshots into separate local backup folders.
+
+## Build from source
+
+You need the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) or newer.
 
 ```sh
+git clone https://github.com/kris70lesgo/cap-avalonia-port.git
+cd cap-avalonia-port
 dotnet run
 ```
 
-The UI is built with Avalonia 12.1.3 and targets macOS, Windows, and Linux.
+The UI uses Avalonia 12.1.3 and targets macOS, Windows, and Linux.
 
-To build a self-contained macOS app bundle on Apple Silicon, run `scripts/package-macos.sh`. It creates `.build/CapAvalonia-final.app`; open it with `open .build/CapAvalonia-final.app`. The script accepts an optional runtime identifier and output bundle path, for example `scripts/package-macos.sh osx-arm64 "$PWD/.build/CapAvalonia-preview.app"`. Build Windows and Linux release archives with `scripts/package-portable.sh win-x64` and `scripts/package-portable.sh linux-x64`. These include the .NET runtime. FFmpeg can be bundled by setting `CAPAVALONIA_FFMPEG_DIR` to a directory containing `ffmpeg`, `ffprobe`, and `ffplay` (use `.exe` names for Windows). Without bundled tools, the user must install FFmpeg on `PATH` for recording and editing.
+### Create release packages
 
-The macOS packager uses ad hoc signing by default, so macOS may tie privacy permissions to the exact build. If Screen & System Audio Recording is enabled but capture still reports permission required, toggle this build's entry off and on, then quit and reopen Cap Avalonia. If you have a stable Apple signing identity in your keychain, set `CAPAVALONIA_CODESIGN_IDENTITY` to its name before packaging so macOS can recognize the app between builds.
+```sh
+# macOS Apple Silicon .app bundle
+scripts/package-macos.sh
 
-Recording and video editing require FFmpeg. Video preview uses `ffplay`, and clip inspection uses `ffprobe`; these are searched beside the app, in its `Helpers` directory, and on `PATH`. macOS full-display screenshots use the system `screencapture` utility; area screenshots and Windows/Linux screenshots use FFmpeg. Capture may require granting screen, camera, or microphone access to Cap Avalonia in System Settings. Media and preferences are saved under the platform's application support directory in `CapAvalonia/`; the recordings folder can be changed in Settings.
+# Portable Windows and Linux x64 archives
+scripts/package-portable.sh win-x64
+scripts/package-portable.sh linux-x64
+```
 
-Install FFmpeg separately if a build does not include it: `brew install ffmpeg` on macOS, a current Windows build from the [FFmpeg download page](https://ffmpeg.org/download.html), or your distribution's `ffmpeg` package on Linux. Use an FFmpeg build that includes AVFoundation, DirectShow, V4L2, and PulseAudio support for the capture devices you plan to use.
+Packages are self-contained with the .NET runtime. To bundle `ffmpeg`, `ffprobe`, and `ffplay`, set `CAPAVALONIA_FFMPEG_DIR` to a directory containing those executables before packaging. On Windows, use the `.exe` versions. Without bundled FFmpeg tools, users must install FFmpeg separately and put it on `PATH`.
 
-## Recorder window comparison
+## How the port was built
 
-The recorder window recreates Cap's 330×395 home screen. This comparison shows the current packaged macOS build captured on 2026-10-19.
+### What changed
 
-| Cap desktop reference | Avalonia current build |
-| --- | --- |
-| ![Cap desktop recorder reference](screenshots/cap-desktop-reference.jpg) | ![Avalonia recorder current build](screenshots/avalonia-final.jpg) |
+Cap’s desktop experience is recreated with Avalonia XAML and C#. The recorder, settings, media library, and editing workflows share one UI codebase across three desktop platforms. FFmpeg supplies the capture and media pipeline, with AVFoundation, DirectShow, and V4L2/PulseAudio handling platform-specific devices.
 
-## Port challenge write-up
+The largest change was replacing hosted recording flows with a complete local file lifecycle: start and stop capture, recover an interrupted recording when enabled, add media to the library, and open it in the editor. Matching Cap’s small recorder also required deliberate sizing, typography, spacing, dark controls, and platform-specific title-bar adjustments instead of default Avalonia styling.
 
-### What was ported
+### What is different
 
-Cap is an existing open-source desktop recording product. This project recreates its compact recorder and settings interface in Avalonia and carries over the local workflows that do not need Cap's hosted service: screen and camera recording, a recording library, local trim/export, and screenshot annotation. The hosted account, upload, and share-link flows were intentionally left out so recordings remain on the user's device.
+Cap’s account, upload, share-link, and hosted collaboration features are not connected. The port focuses on local capture and media workflows. Screen and device permissions, system-audio loopback sources, and available FFmpeg backends vary by platform; Linux Wayland portals are not yet supported.
 
-### How the implementation changed
+### Time and validation
 
-The recorder and settings views are built in Avalonia XAML and C#, so one UI codebase targets macOS, Windows, and Linux. FFmpeg provides the media pipeline, with AVFoundation on macOS, DirectShow on Windows, and X11/XWayland plus V4L2/PulseAudio on Linux. Platform-specific permission and capture rules stay behind small platform-aware services. Media, preferences, previews, and backups are stored locally.
+The work spanned 16 calendar days from the first project commit on 6 October 2026 to release packaging on 22 October. Hours were not tracked, so this write-up does not estimate them. macOS screen-only capture and screen + camera + microphone capture were checked as playable H.264/AAC MP4 files. Webcam composition and audio mixing were smoke-tested with synthetic media. Windows and Linux packages were built and packaged, but device capture still needs validation on those operating systems.
 
-The biggest rework was replacing Cap's online recording workflow with a local file lifecycle. A recording must start quickly, stop cleanly, survive an interrupted write when the recoverable-recording option is enabled, appear in the library, and open in the local editor. Reproducing the compact window also required explicit sizing, custom typography, spacing, dark controls, and platform-specific title-bar adjustments rather than relying on a default Avalonia theme.
+## License and attribution
 
-### What went well and what remains different
-
-Avalonia made it practical to keep the recorder and settings in one C# UI project while using native capture backends through FFmpeg. The local library, recording pipeline, PiP composition, screenshot markup, and basic trim/export do not require a Cap account. System audio still depends on an available loopback or monitor source. Linux screen capture currently needs X11/XWayland; native Wayland portal capture is not implemented. The editor does not include captions, transitions, cursor effects, or multi-track editing, and Cap's online services are not part of this build.
-
-### Effort and validation
-
-The work was not tracked as billable hours, so this report does not invent an hour estimate. The first project commit was made on 6 October 2026; release package preparation began on 19 October, a 13-day calendar span. Self-contained packages were built for macOS arm64, Windows x64, and Linux x64. On macOS, screen-only capture and a screen recording with the built-in camera overlay and microphone were recorded and checked as playable H.264/AAC MP4 files after granting Screen, Camera, and Microphone access. The webcam-composition and audio-mix filters were also smoke-tested with synthetic media. Windows and Linux builds have been compiled and packaged, but device capture still needs validation on those operating systems because FFmpeg devices, privacy grants, and available system-audio sources depend on the machine. The latest macOS build's screen-capture permission was refreshed and verified.
+Cap Avalonia is licensed under [AGPL-3.0](LICENSE). It is an independent port of the [Cap desktop application](https://github.com/CapSoftware/Cap) by Cap Software; it is not an official Cap release. Bundled fonts include their own license at [`assets/Fonts/OFL.txt`](assets/Fonts/OFL.txt).
